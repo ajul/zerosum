@@ -1,3 +1,4 @@
+import numpy
 import zerosum.balance
 from dataset.nonsymmetric import pokemonTypeChart6
 

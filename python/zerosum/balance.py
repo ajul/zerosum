@@ -36,18 +36,54 @@ def nonSymmetric(handicapFunction, rowWeights, colWeights = None, rowDerivative 
         colObjectives = numpy.tensordot(F, rowWeights, axes = ([0], [0])) * colObjectiveWeights
         
         return numpy.concatenate((rowObjectives, colObjectives))
+        
+    def jacobian(x):
+        # J_ij = derivative of payoff i with respect to handicap j
+        rowHandicaps = x[:rowCount]
+        colHandicaps = x[-colCount:]
+        
+        Fr = numpy.zeros((rowCount, colCount))
+        Fc = numpy.zeros((rowCount, colCount))
+        
+        for rowIndex in range(rowCount):
+            for colIndex in range(colCount):
+                Fr[rowIndex, colIndex] = rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+                Fc[rowIndex, colIndex] = colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        
+        # derivative of row payoffs with respect to row handicaps
+        Jrr = numpy.tensordot(Fr, colWeights, axes = ([1], [0])) * rowObjectiveWeights
+        Jrr = numpy.diag(Jrr)
+        
+        # derivative of col payoffs with respect to col handicaps
+        Jcc = numpy.tensordot(Fc, rowWeights, axes = ([0], [0])) * colObjectiveWeights
+        Jcc = numpy.diag(Jcc)
+        
+        # derivative of row payoffs with respect to col handicaps
+        Jrc = Fc * colWeights[None, :] * rowObjectiveWeights[:, None]
+        
+        # derivative of col payoffs with respect to row handicaps
+        Jcr = Fr * rowWeights[:, None] * colObjectiveWeights[None, :]
+        Jcr = numpy.transpose(Jcr)
+        
+        # assemble full Jacobian
+        J = numpy.bmat([[Jrr, Jrc],
+                        [Jcr, Jcc]])
+        
+        return J
     
     rowCount, rowWeights, rowObjectiveWeights = _processWeights(rowWeights)
     colCount, colWeights, colObjectiveWeights = _processWeights(colWeights)
+    
+    totalCount = rowCount + colCount
     
     if (rowDerivative is None) != (colDerivative is None):
         raise ValueError('Both rowDerivative and colDerivative must be provided for Jacobian to function.')
     elif rowDerivative is None:
         jac = None
     else:
-        jac = None # TODO
+        jac = jacobian
         
-    x0 = numpy.zeros((rowCount + colCount))
+    x0 = numpy.zeros((totalCount))
     result = scipy.optimize.root(fun = objective, x0 = x0, jac = jac, *args, **kwargs)
     result.rowHandicaps = result.x[:rowCount]
     result.colHandicaps = result.x[-colCount:]
@@ -92,11 +128,17 @@ def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *arg
 def multiplicative(initialPayoffMatrix, rowWeights = None, colWeights = None, *args, **kwargs):
     def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
         return initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap) - 1.0
+        
+    def rowDerivative(rowIndex, colIndex, rowHandicap, colHandicap):
+        return -initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap)
+        
+    def colDerivative(rowIndex, colIndex, rowHandicap, colHandicap):
+        return initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap)
     
     if rowWeights is None: rowWeights = initialPayoffMatrix.shape[0]
     if colWeights is None: colWeights = initialPayoffMatrix.shape[1]
     
-    return nonSymmetric(handicapFunction, rowWeights, colWeights, *args, **kwargs)
+    return nonSymmetric(handicapFunction, rowWeights, colWeights, rowDerivative, colDerivative, *args, **kwargs)
     
 def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwargs): 
     def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
