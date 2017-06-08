@@ -40,7 +40,9 @@ def nonSymmetric(handicapFunction, rowWeights, colWeights = None, rowDerivative 
     rowCount, rowWeights, rowObjectiveWeights = _processWeights(rowWeights)
     colCount, colWeights, colObjectiveWeights = _processWeights(colWeights)
     
-    if strategyDerivative is None:
+    if (rowDerivative is None) != (colDerivative is None):
+        raise ValueError('Both rowDerivative and colDerivative must be provided for Jacobian to function.')
+    elif rowDerivative is None:
         jac = None
     else:
         jac = None # TODO
@@ -86,6 +88,15 @@ def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *arg
     result.F = evaluateF(result.x)
     
     return result
+
+def multiplicative(initialPayoffMatrix, rowWeights = None, colWeights = None, *args, **kwargs):
+    def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
+        return initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap) - 1.0
+    
+    if rowWeights is None: rowWeights = initialPayoffMatrix.shape[0]
+    if colWeights is None: colWeights = initialPayoffMatrix.shape[1]
+    
+    return nonSymmetric(handicapFunction, rowWeights, colWeights, *args, **kwargs)
     
 def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwargs): 
     def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
@@ -98,4 +109,4 @@ def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwar
     
     if strategyWeights is None: strategyWeights = initialPayoffMatrix.shape[0]
 
-    return symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *args, **kwargs) 
+    return symmetric(handicapFunction, strategyWeights, *args, **kwargs) 
