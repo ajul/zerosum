@@ -39,10 +39,14 @@ def nonSymmetric(handicapFunction, rowWeights, colWeights = None, rowDerivative 
     
     rowCount, rowWeights, rowObjectiveWeights = _processWeights(rowWeights)
     colCount, colWeights, colObjectiveWeights = _processWeights(colWeights)
+    
+    if strategyDerivative is None:
+        jac = None
+    else:
+        jac = None # TODO
         
-    # TODO: derivative
     x0 = numpy.zeros((self.rowCount + self.colCount))
-    result = scipy.optimize.least_squares(fun = objective, x0 = x0, *args, **kwargs)
+    result = scipy.optimize.root(fun = objective, x0 = x0, jac = jac, *args, **kwargs)
     result.rowHandicaps = result.x[:rowCount]
     result.colHandicaps = result.x[-colCount:]
     result.F = evaluateF(result.x)
@@ -53,7 +57,7 @@ def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *arg
     def evaluateF(x):
         F = numpy.zeros((strategyCount, strategyCount))
         
-        for rowIndex in range(strategyCount):
+        for rowIndex in range(strategyCount-1):
             for colIndex in range(rowIndex+1, strategyCount):
                 payoff = handicapFunction(rowIndex, colIndex, handicaps[rowIndex], handicaps[colIndex])
                 F[rowIndex, colIndex] = payoff
@@ -71,11 +75,27 @@ def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *arg
         
     strategyCount, strategyWeights, strategyObjectiveWeights = _processWeights(strategyWeights)
         
-    # TODO: derivative
+    if strategyDerivative is None:
+        jac = None
+    else:
+        jac = None # TODO
     
     x0 = numpy.zeros((self.rowCount))
-    result = scipy.optimize.least_squares(fun = objective, x0 = x0, *args, **kwargs)
+    result = scipy.optimize.root(fun = objective, x0 = x0, jac = jac, *args, **kwargs)
     result.handicaps = result.x
     result.F = evaluateF(result.x)
     
     return result
+    
+def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwargs): 
+    def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
+        offset = offsetMatrix[rowIndex, colIndex]
+        return 1.0 / (1.0 + numpy.exp(rowHandicap - colHandicap + offset)) - 0.5
+    
+    offsetMatrix = numpy.log(1.0 / initialPayoffMatrix - 1.0)
+    
+    # TODO: derivatives
+    
+    if strategyWeights is None: strategyWeights = initialPayoff.shape[0]
+
+    return symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *args, **kwargs) 
