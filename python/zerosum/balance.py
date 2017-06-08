@@ -42,27 +42,27 @@ def nonSymmetric(handicapFunction, rowWeights, colWeights = None, rowDerivative 
         rowHandicaps = x[:rowCount]
         colHandicaps = x[-colCount:]
         
-        Fr = numpy.zeros((rowCount, colCount))
-        Fc = numpy.zeros((rowCount, colCount))
+        dFdr = numpy.zeros((rowCount, colCount))
+        dFdc = numpy.zeros((rowCount, colCount))
         
         for rowIndex in range(rowCount):
             for colIndex in range(colCount):
-                Fr[rowIndex, colIndex] = rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
-                Fc[rowIndex, colIndex] = colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+                dFdr[rowIndex, colIndex] = rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+                dFdc[rowIndex, colIndex] = colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
         
         # derivative of row payoffs with respect to row handicaps
-        Jrr = numpy.tensordot(Fr, colWeights, axes = ([1], [0])) * rowObjectiveWeights
+        Jrr = numpy.tensordot(dFdr, colWeights, axes = ([1], [0])) * rowObjectiveWeights
         Jrr = numpy.diag(Jrr)
         
         # derivative of col payoffs with respect to col handicaps
-        Jcc = numpy.tensordot(Fc, rowWeights, axes = ([0], [0])) * colObjectiveWeights
+        Jcc = numpy.tensordot(dFdc, rowWeights, axes = ([0], [0])) * colObjectiveWeights
         Jcc = numpy.diag(Jcc)
         
         # derivative of row payoffs with respect to col handicaps
-        Jrc = Fc * colWeights[None, :] * rowObjectiveWeights[:, None]
+        Jrc = dFdc * colWeights[None, :] * rowObjectiveWeights[:, None]
         
         # derivative of col payoffs with respect to row handicaps
-        Jcr = Fr * rowWeights[:, None] * colObjectiveWeights[None, :]
+        Jcr = dFdr * rowWeights[:, None] * colObjectiveWeights[None, :]
         Jcr = numpy.transpose(Jcr)
         
         # assemble full Jacobian
@@ -91,7 +91,7 @@ def nonSymmetric(handicapFunction, rowWeights, colWeights = None, rowDerivative 
     
     return result
 
-def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *args, **kwargs):
+def symmetric(handicapFunction, strategyWeights, rowDerivative = None, *args, **kwargs):
     def evaluateF(x):
         F = numpy.zeros((strategyCount, strategyCount))
         
@@ -111,12 +111,32 @@ def symmetric(handicapFunction, strategyWeights, strategyDerivative = None, *arg
         
         return objectives
         
+    def jacobian(x):
+        dFdr = numpy.zeros((strategyCount, strategyCount))
+        
+        for rowIndex in range(strategyCount):
+            for colIndex in range(strategyCount):
+                payoffDerivative = rowDerivative(rowIndex, colIndex, x[rowIndex], x[colIndex])
+                dFdr[rowIndex, colIndex] = payoffDerivative
+        
+        # derivative of row payoffs with respect to row handicaps
+        Jrr = numpy.tensordot(dFdr, strategyWeights, axes = ([1], [0])) * strategyObjectiveWeights
+        Jrr = numpy.diag(Jrr)
+        
+        # derivative of row payoffs with respect to col handicaps
+        dFdc = numpy.transpose(dFdr)
+        Jrc = dFdc * strategyWeights[None, :] * strategyObjectiveWeights[:, None]
+        
+        J = Jrr + Jrc
+        
+        return J
+        
     strategyCount, strategyWeights, strategyObjectiveWeights = _processWeights(strategyWeights)
         
-    if strategyDerivative is None:
+    if rowDerivative is None:
         jac = None
     else:
-        jac = None # TODO
+        jac = jacobian
     
     x0 = numpy.zeros((strategyCount))
     result = scipy.optimize.root(fun = objective, x0 = x0, jac = jac, *args, **kwargs)
@@ -144,6 +164,10 @@ def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwar
     def handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap):
         offset = offsetMatrix[rowIndex, colIndex]
         return 1.0 / (1.0 + numpy.exp(rowHandicap - colHandicap + offset)) - 0.5
+        
+    def rowDerivative(rowIndex, colIndex, rowHandicap, colHandicap):
+        payoff = handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap)
+        return payoff * payoff - 0.25
     
     offsetMatrix = numpy.log(1.0 / initialPayoffMatrix - 1.0)
     
@@ -151,4 +175,4 @@ def logisticSymmetric(initialPayoffMatrix, strategyWeights = None, *args, **kwar
     
     if strategyWeights is None: strategyWeights = initialPayoffMatrix.shape[0]
 
-    return symmetric(handicapFunction, strategyWeights, *args, **kwargs) 
+    return symmetric(handicapFunction, strategyWeights, rowDerivative = rowDerivative, *args, **kwargs) 
