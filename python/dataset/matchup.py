@@ -1,6 +1,6 @@
 import numpy
 
-class Dataset():
+class MatchupDataset():
     def __init__(self, data, names):
         self.data = self.canonicalize(data)
         self.names = names
@@ -16,7 +16,7 @@ class Dataset():
         idx = numpy.argsort(self.data.sum(axis = 0))
         newData = self.data[idx, :][:, idx]
         newNames = list(self.names[i] for i in idx)
-        return Dataset(newData, newNames)
+        return MatchupDataset(newData, newNames)
         
     def toCSV(self):
         result = ',' + ','.join(self.names) + '\n'
@@ -28,7 +28,7 @@ class Dataset():
         return result
 
 # Super Smash Bros. 64. Source: https://www.ssbwiki.com/Character_matchup_(SSB)
-ssb64 = SymmetricMatrixDataset(
+ssb64 = MatchupDataset(
     [
         [50, 60, 55, 65, 65, 65, 60, 70, 65, 70, 75, 70, ],
         [40, 50, 60, 60, 60, 60, 50, 60, 60, 60, 60, 60, ],
@@ -48,7 +48,7 @@ ssb64 = SymmetricMatrixDataset(
      'Donkey Kong', 'Ness', 'Link', 'Luigi'])
 
 # Super Street Fighter 2 Turbo. Source: http://curryallergy.blogspot.com/2008/11/super-turbo-new-arcadia-diagram.html
-ssf2t = SymmetricMatrixDataset(
+ssf2t = MatchupDataset(
     [
         [5.0, 6.5, 8.0, 6.0, 7.5, 4.5, 6.5, 3.0, 6.0, 7.5, 6.5, 7.0, 4.0, 4.0, 6.5, 6.5],
         [3.5, 5.0, 7.0, 3.5, 5.0, 4.0, 3.5, 2.5, 5.5, 5.0, 4.5, 5.0, 3.5, 4.0, 5.0, 6.0],
