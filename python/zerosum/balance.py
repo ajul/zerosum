@@ -124,7 +124,7 @@ def symmetric(handicapFunction, strategyWeights, rowDerivative = None, *args, **
         Jrr = numpy.diag(Jrr)
         
         # derivative of row payoffs with respect to col handicaps
-        dFdc = numpy.transpose(dFdr)
+        dFdc = -numpy.transpose(dFdr)
         Jrc = dFdc * strategyWeights[None, :] * strategyObjectiveWeights[:, None]
         
         J = Jrr + Jrc
