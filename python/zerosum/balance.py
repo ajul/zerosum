@@ -69,12 +69,17 @@ class NonSymmetricBalance(Balance):
                 
         return F
         
-    def objective(self, x):
+    def objective(self, x, check_jacobian_epsilon = None):
         F = self.evaluateF(x)
         
         # dot products are weighted 
         rowObjectives = numpy.tensordot(F, self.colWeights, axes = ([1], [0])) * self.rowObjectiveWeights
         colObjectives = numpy.tensordot(F, self.rowWeights, axes = ([0], [0])) * self.colObjectiveWeights
+        
+        if check_jacobian_epsilon is not None:
+            epsilon = check_jacobian_epsilon
+            if epsilon is True: epsilon = None
+            self.check_jacobian(x, epsilon = epsilon)
         
         return numpy.concatenate((rowObjectives, colObjectives))
         
@@ -112,14 +117,16 @@ class NonSymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, *args, **kwargs):
+    def optimize(self, check_jacobian_epsilon = None, *args, **kwargs):
         if self.rowDerivative is None or self.colDerivative is None:
             jac = None
         else:
             jac = self.jacobian
+            
+        fun = lambda x: self.objective(x, check_jacobian_epsilon = check_jacobian_epsilon)
         
         x0 = numpy.zeros((self.totalCount))
-        result = scipy.optimize.root(fun = self.objective, x0 = x0, jac = jac, *args, **kwargs)
+        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.rowHandicaps = result.x[:self.rowCount]
         result.colHandicaps = result.x[-self.colCount:]
         result.F = self.evaluateF(result.x)
@@ -141,11 +148,16 @@ class SymmetricBalance(Balance):
                 
         return F
         
-    def objective(self, x):
+    def objective(self, x, check_jacobian_epsilon = None):
         F = self.evaluateF(x)
         
         # dot products are weighted 
         objectives = numpy.tensordot(F, self.strategyWeights, axes = ([1], [0])) * self.strategyObjectiveWeights
+        
+        if check_jacobian_epsilon is not None:
+            epsilon = check_jacobian_epsilon
+            if epsilon is True: epsilon = None
+            self.check_jacobian(x, epsilon = epsilon)
         
         return objectives
         
@@ -169,14 +181,16 @@ class SymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, *args, **kwargs):
+    def optimize(self, check_jacobian_epsilon = None, *args, **kwargs):
         if self.rowDerivative is None:
             jac = None
         else:
             jac = self.jacobian
             
+        fun = lambda x: self.objective(x, check_jacobian_epsilon = check_jacobian_epsilon)
+            
         x0 = numpy.zeros((self.totalCount))
-        result = scipy.optimize.root(fun = self.objective, x0 = x0, jac = jac, *args, **kwargs)
+        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.handicaps = result.x
         result.F = self.evaluateF(result.x)
         return result

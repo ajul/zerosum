@@ -5,8 +5,6 @@ init = ssf2t.sortedBySum()
 
 balance = zerosum.balance.LogisticSymmetricBalance(init.data)
 
-balance.check_jacobian()
-
-result = balance.optimize()
+result = balance.optimize(check_jacobian_epsilon = True)
 
 print(result)
