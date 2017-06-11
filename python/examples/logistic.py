@@ -1,3 +1,4 @@
+import _initpath
 import zerosum.balance
 from dataset.matchup import ssf2t
 
