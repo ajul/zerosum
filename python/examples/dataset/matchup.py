@@ -12,13 +12,13 @@ class MatchupDataset():
             data *= 0.5 / numpy.mean(data)
         return data
         
-    def sortedBySum(self):
+    def sorted_by_sum(self):
         idx = numpy.argsort(self.data.sum(axis = 0))
         newData = self.data[idx, :][:, idx]
         newNames = list(self.names[i] for i in idx)
         return MatchupDataset(newData, newNames)
         
-    def toCSV(self):
+    def to_csv(self):
         result = ',' + ','.join(self.names) + '\n'
         for i in range(self.data.shape[0]):
             result += self.names[i] + ','

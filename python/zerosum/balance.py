@@ -1,7 +1,7 @@
 import numpy
 import scipy.optimize
 
-def _processWeights(arg):
+def _process_weights(arg):
     try:
         count = arg.size
         weights = arg
@@ -10,142 +10,142 @@ def _processWeights(arg):
         weights = numpy.ones((arg)) / count
     
     # replace zeros with ones for purposes of weighting the objective vector
-    objectiveWeights = weights
-    objectiveWeights[objectiveWeights == 0.0] = 1.0
+    objective_weights = weights
+    objective_weights[objective_weights == 0.0] = 1.0
     
-    return count, weights, objectiveWeights
+    return count, weights, objective_weights
     
 class Balance():
     def jacobian_fd(self, epsilon = None):
         if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
         def result(x):
-            J = numpy.zeros((self.xCount, self.xCount))
+            J = numpy.zeros((self.x_count, self.x_count))
             
-            for inputIndex in range(self.xCount):
+            for input_index in range(self.x_count):
                 xdp = x.copy()
-                xdp[inputIndex] += epsilon * 0.5
+                xdp[input_index] += epsilon * 0.5
                 
                 xdn = x.copy()
-                xdn[inputIndex] -= epsilon * 0.5
+                xdn[input_index] -= epsilon * 0.5
                 
-                J[:, inputIndex] = (self.objective(xdp) - self.objective(xdn)) / epsilon
+                J[:, input_index] = (self.objective(xdp) - self.objective(xdn)) / epsilon
             
             return J
         return result
 
     def check_jacobian(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.xCount)
+        if x is None: x = numpy.zeros(self.x_count)
         J = self.jacobian(x)
         jac_fd = self.jacobian_fd(epsilon = epsilon)
         result = J - jac_fd(x)
         print('Maximum difference between evaluated Jacobian and finite difference:', numpy.max(numpy.abs(result)))
         return result
         
-    def check_rowDerivative(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.xCount)
-        result = self.rowDerivativeMatrix(x) - self.rowDerivativeMatrix_fd(x, epsilon)
-        print('Maximum difference between evaluated rowDerivative and finite difference:', numpy.max(numpy.abs(result)))
+    def check_row_derivative(self, x = None, epsilon = None):
+        if x is None: x = numpy.zeros(self.x_count)
+        result = self.row_derivative_matrix(x) - self.row_derivative_matrix_fd(x, epsilon)
+        print('Maximum difference between evaluated row_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
     
-    def check_colDerivative(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.xCount)
-        result = self.colDerivativeMatrix(x) - self.colDerivativeMatrix_fd(x, epsilon)
-        print('Maximum difference between evaluated colDerivative and finite difference:', numpy.max(numpy.abs(result)))
+    def check_col_derivative(self, x = None, epsilon = None):
+        if x is None: x = numpy.zeros(self.x_count)
+        result = self.col_derivative_matrix(x) - self.col_derivative_matrix_fd(x, epsilon)
+        print('Maximum difference between evaluated col_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
         
-    def evaluateF(self, rowHandicaps, colHandicaps):
-        F = numpy.zeros((self.rowCount, self.colCount))
+    def evaluate_F(self, row_handicaps, col_handicaps):
+        F = numpy.zeros((self.row_count, self.col_count))
         
-        for rowIndex in range(self.rowCount):
-            for colIndex in range(self.colCount):
-                F[rowIndex, colIndex] = self.handicapFunction(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        for row_index in range(self.row_count):
+            for col_index in range(self.col_count):
+                F[row_index, col_index] = self.handicap_function(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
                 
         return F
         
-    def rowDerivativeMatrix_fd(self, x, epsilon = None):
+    def row_derivative_matrix_fd(self, x, epsilon = None):
         if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
-        rowHandicapsN = x[:self.rowCount] - epsilon * 0.5
-        rowHandicapsP = x[:self.rowCount] + epsilon * 0.5
-        colHandicaps = x[-self.colCount:]
-        return (self.evaluateF(rowHandicapsP, colHandicaps) - self.evaluateF(rowHandicapsN, colHandicaps)) / epsilon
+        row_handicaps_N = x[:self.row_count] - epsilon * 0.5
+        row_handicaps_P = x[:self.row_count] + epsilon * 0.5
+        col_handicaps = x[-self.col_count:]
+        return (self.evaluate_F(row_handicaps_P, col_handicaps) - self.evaluate_F(row_handicaps_N, col_handicaps)) / epsilon
         
-    def colDerivativeMatrix_fd(self, x, epsilon = None):
+    def col_derivative_matrix_fd(self, x, epsilon = None):
         if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
-        rowHandicaps = x[:self.rowCount]
-        colHandicapsN = x[-self.colCount:] - epsilon * 0.5
-        colHandicapsP = x[-self.colCount:] + epsilon * 0.5
-        return (self.evaluateF(rowHandicaps, colHandicapsP) - self.evaluateF(rowHandicaps, colHandicapsN)) / epsilon
+        row_handicaps = x[:self.row_count]
+        col_handicaps_N = x[-self.col_count:] - epsilon * 0.5
+        col_handicaps_P = x[-self.col_count:] + epsilon * 0.5
+        return (self.evaluate_F(row_handicaps, col_handicaps_P) - self.evaluate_F(row_handicaps, col_handicaps_N)) / epsilon
         
-    def rowDerivativeMatrix(self, x):
-        rowHandicaps = x[:self.rowCount]
-        colHandicaps = x[-self.colCount:]
+    def row_derivative_matrix(self, x):
+        row_handicaps = x[:self.row_count]
+        col_handicaps = x[-self.col_count:]
         
-        dFdr = numpy.zeros((self.rowCount, self.colCount))
+        dFdr = numpy.zeros((self.row_count, self.col_count))
         
-        for rowIndex in range(self.rowCount):
-            for colIndex in range(self.colCount):
-                dFdr[rowIndex, colIndex] = self.rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        for row_index in range(self.row_count):
+            for col_index in range(self.col_count):
+                dFdr[row_index, col_index] = self.row_derivative(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
         
         return dFdr
         
-    def colDerivativeMatrix(self, x):
-        rowHandicaps = x[:self.rowCount]
-        colHandicaps = x[-self.colCount:]
+    def col_derivative_matrix(self, x):
+        row_handicaps = x[:self.row_count]
+        col_handicaps = x[-self.col_count:]
         
-        dFdc = numpy.zeros((self.rowCount, self.colCount))
+        dFdc = numpy.zeros((self.row_count, self.col_count))
         
-        for rowIndex in range(self.rowCount):
-            for colIndex in range(self.colCount):
-                dFdc[rowIndex, colIndex] = self.colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        for row_index in range(self.row_count):
+            for col_index in range(self.col_count):
+                dFdc[row_index, col_index] = self.col_derivative(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
         
         return dFdc
 
 class NonSymmetricBalance(Balance):
-    def __init__(self, handicapFunction, rowWeights, colWeights = None, rowDerivative = None, colDerivative = None):
-        self.handicapFunction = handicapFunction
+    def __init__(self, handicap_function, row_weights, col_weights = None, row_derivative = None, col_derivative = None):
+        self.handicap_function = handicap_function
         
-        if (rowDerivative is None) != (colDerivative is None):
-            raise ValueError('Both rowDerivative and colDerivative must be provided for Jacobian to function.')
+        if (row_derivative is None) != (col_derivative is None):
+            raise ValueError('Both row_derivative and col_derivative must be provided for Jacobian to function.')
         
-        self.rowDerivative = rowDerivative
-        self.colDerivative = colDerivative
+        self.row_derivative = row_derivative
+        self.col_derivative = col_derivative
     
-        self.rowCount, self.rowWeights, self.rowObjectiveWeights = _processWeights(rowWeights)
-        self.colCount, self.colWeights, self.colObjectiveWeights = _processWeights(colWeights)
+        self.row_count, self.row_weights, self.rowobjective_weights = _process_weights(row_weights)
+        self.col_count, self.col_weights, self.colobjective_weights = _process_weights(col_weights)
         
-        self.xCount = self.rowCount + self.colCount
+        self.x_count = self.row_count + self.col_count
         
-    def evaluateFx(self, x):
-        return self.evaluateF(x[:self.rowCount], x[-self.colCount:])
+    def evaluate_Fx(self, x):
+        return self.evaluate_F(x[:self.row_count], x[-self.col_count:])
         
     def objective(self, x):
-        F = self.evaluateFx(x)
+        F = self.evaluate_Fx(x)
         
         # dot products are weighted 
-        rowObjectives = numpy.tensordot(F, self.colWeights, axes = ([1], [0])) * self.rowObjectiveWeights
-        colObjectives = numpy.tensordot(F, self.rowWeights, axes = ([0], [0])) * self.colObjectiveWeights
+        row_objectives = numpy.tensordot(F, self.col_weights, axes = ([1], [0])) * self.rowobjective_weights
+        col_objectives = numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
         
-        return numpy.concatenate((rowObjectives, colObjectives))
+        return numpy.concatenate((row_objectives, col_objectives))
         
     def jacobian(self, x):
         # J_ij = derivative of payoff i with respect to handicap j
         
-        dFdr = self.rowDerivativeMatrix(x)
-        dFdc = self.colDerivativeMatrix(x)
+        dFdr = self.row_derivative_matrix(x)
+        dFdc = self.col_derivative_matrix(x)
         
         # derivative of row payoffs with respect to row handicaps
-        Jrr = numpy.tensordot(dFdr, self.colWeights, axes = ([1], [0])) * self.rowObjectiveWeights
+        Jrr = numpy.tensordot(dFdr, self.col_weights, axes = ([1], [0])) * self.rowobjective_weights
         Jrr = numpy.diag(Jrr)
         
         # derivative of col payoffs with respect to col handicaps
-        Jcc = numpy.tensordot(dFdc, self.rowWeights, axes = ([0], [0])) * self.colObjectiveWeights
+        Jcc = numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
         Jcc = numpy.diag(Jcc)
         
         # derivative of row payoffs with respect to col handicaps
-        Jrc = dFdc * self.colWeights[None, :] * self.rowObjectiveWeights[:, None]
+        Jrc = dFdc * self.col_weights[None, :] * self.rowobjective_weights[:, None]
         
         # derivative of col payoffs with respect to row handicaps
-        Jcr = dFdr * self.rowWeights[:, None] * self.colObjectiveWeights[None, :]
+        Jcr = dFdr * self.row_weights[:, None] * self.colobjective_weights[None, :]
         Jcr = numpy.transpose(Jcr)
         
         # assemble full Jacobian
@@ -155,126 +155,126 @@ class NonSymmetricBalance(Balance):
         return J
         
     def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
-        if self.rowDerivative is None or self.colDerivative is None:
+        if self.row_derivative is None or self.col_derivative is None:
             jac = None
         else:
             jac = self.jacobian
             
         def fun(x):
             if check_derivative_epsilon is not False:
-                self.check_rowDerivative(x, epsilon = check_derivative_epsilon)
-                self.check_colDerivative(x, epsilon = check_derivative_epsilon)
+                self.check_row_derivative(x, epsilon = check_derivative_epsilon)
+                self.check_col_derivative(x, epsilon = check_derivative_epsilon)
             if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)   
         
-        x0 = numpy.zeros((self.xCount))
+        x0 = numpy.zeros((self.x_count))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
-        result.rowHandicaps = result.x[:self.rowCount]
-        result.colHandicaps = result.x[-self.colCount:]
-        result.F = self.evaluateFx(result.x)
+        result.row_handicaps = result.x[:self.row_count]
+        result.col_handicaps = result.x[-self.col_count:]
+        result.F = self.evaluate_Fx(result.x)
         
         return result
 
 class SymmetricBalance(Balance):
-    def __init__(self, handicapFunction, strategyWeights, rowDerivative = None):
-        self.xCount, self.strategyWeights, self.strategyObjectiveWeights = _processWeights(strategyWeights)
-        self.rowCount = self.xCount
-        self.colCount = self.xCount
+    def __init__(self, handicap_function, strategy_weights, row_derivative = None):
+        self.x_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
+        self.row_count = self.x_count
+        self.col_count = self.x_count
         
-        if rowDerivative is None:
-            self.colDerivative = None
+        if row_derivative is None:
+            self.col_derivative = None
    
-    def colDerivative(self, rowIndex, colIndex, rowHandicap, colHandicap): 
-        return -self.rowDerivative(colIndex, rowIndex, colHandicap, rowHandicap)
+    def col_derivative(self, row_index, col_index, row_handicap, col_handicap): 
+        return -self.row_derivative(col_index, row_index, col_handicap, row_handicap)
         
-    def evaluateFx(self, x):
-        F = numpy.zeros((self.xCount, self.xCount))
+    def evaluate_Fx(self, x):
+        F = numpy.zeros((self.x_count, self.x_count))
         
-        for rowIndex in range(self.xCount-1):
-            for colIndex in range(rowIndex+1, self.xCount):
-                payoff = self.handicapFunction(rowIndex, colIndex, x[rowIndex], x[colIndex])
-                F[rowIndex, colIndex] = payoff
-                F[colIndex, rowIndex] = -payoff
+        for row_index in range(self.x_count-1):
+            for col_index in range(row_index+1, self.x_count):
+                payoff = self.handicap_function(row_index, col_index, x[row_index], x[col_index])
+                F[row_index, col_index] = payoff
+                F[col_index, row_index] = -payoff
                 
         return F
         
     def objective(self, x):
-        F = self.evaluateFx(x)
+        F = self.evaluate_Fx(x)
         
         # dot products are weighted 
-        objectives = numpy.tensordot(F, self.strategyWeights, axes = ([1], [0])) * self.strategyObjectiveWeights
+        objectives = numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         
         return objectives
         
     def jacobian(self, x):
-        dFdr = self.rowDerivativeMatrix(x)
+        dFdr = self.row_derivative_matrix(x)
         
         # derivative of row payoffs with respect to row handicaps
-        Jrr = numpy.tensordot(dFdr, self.strategyWeights, axes = ([1], [0])) * self.strategyObjectiveWeights
+        Jrr = numpy.tensordot(dFdr, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         Jrr = numpy.diag(Jrr)
         
         # derivative of row payoffs with respect to col handicaps
         dFdc = -numpy.transpose(dFdr)
-        Jrc = dFdc * self.strategyWeights[None, :] * self.strategyObjectiveWeights[:, None]
+        Jrc = dFdc * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
         
         J = Jrr + Jrc
         
         return J
         
     def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
-        if self.rowDerivative is None:
+        if self.row_derivative is None:
             jac = None
         else:
             jac = self.jacobian
             
         def fun(x):
             if check_derivative_epsilon is not False:
-                self.check_rowDerivative(x, epsilon = check_derivative_epsilon)
-                self.check_colDerivative(x, epsilon = check_derivative_epsilon)
+                self.check_row_derivative(x, epsilon = check_derivative_epsilon)
+                self.check_col_derivative(x, epsilon = check_derivative_epsilon)
             if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)      
             
-        x0 = numpy.zeros((self.xCount))
+        x0 = numpy.zeros((self.x_count))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.handicaps = result.x
-        result.F = self.evaluateFx(result.x)
+        result.F = self.evaluate_Fx(result.x)
         return result
     
 class MultiplicativeBalance(NonSymmetricBalance):
-    def __init__(self, initialPayoffMatrix, rowWeights = None, colWeights = None):
-        self.initialPayoffMatrix = initialPayoffMatrix
-        if rowWeights is None: rowWeights = initialPayoffMatrix.shape[0]
-        if colWeights is None: colWeights = initialPayoffMatrix.shape[1]
+    def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None):
+        self.initial_payoff_matrix = initial_payoff_matrix
+        if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
+        if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
     
-        NonSymmetricBalance.__init__(self, self.handicapFunction, rowWeights = rowWeights, colWeights = colWeights, rowDerivative = self.rowDerivative, colDerivative = self.colDerivative)
+        NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, row_derivative = self.row_derivative, col_derivative = self.col_derivative)
 
-    def handicapFunction(self, rowIndex, colIndex, rowHandicap, colHandicap):
-        return self.initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap) - 1.0
+    def handicap_function(self, row_index, col_index, row_handicap, col_handicap):
+        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap) - 1.0
         
-    def rowDerivative(self, rowIndex, colIndex, rowHandicap, colHandicap):
-        return -self.initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap)
+    def row_derivative(self, row_index, col_index, row_handicap, col_handicap):
+        return -self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
         
-    def colDerivative(self, rowIndex, colIndex, rowHandicap, colHandicap):
-        return self.initialPayoffMatrix[rowIndex, colIndex] * numpy.exp(colHandicap - rowHandicap)
+    def col_derivative(self, row_index, col_index, row_handicap, col_handicap):
+        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
     
     def optimize(self, *args, **kwargs):
         result = NonSymmetricBalance.optimize(self, *args, **kwargs)
-        result.rowLogHandicaps = result.rowHandicaps
-        result.colLogHandicaps = result.colHandicaps
-        result.rowHandicaps = numpy.exp(result.rowHandicaps)
-        result.colHandicaps = numpy.exp(result.colHandicaps)
+        result.row_log_handicaps = result.row_handicaps
+        result.col_log_handicaps = result.col_handicaps
+        result.row_handicaps = numpy.exp(result.row_handicaps)
+        result.col_handicaps = numpy.exp(result.col_handicaps)
         return result
     
 class LogisticSymmetricBalance(SymmetricBalance):
-    def __init__(self, initialPayoffMatrix, strategyWeights = None):
-        self.offsetMatrix = numpy.log(1.0 / initialPayoffMatrix - 1.0)
-        if strategyWeights is None: strategyWeights = initialPayoffMatrix.shape[0]
-        SymmetricBalance.__init__(self, self.handicapFunction, strategyWeights, rowDerivative = self.rowDerivative)
+    def __init__(self, initial_payoff_matrix, strategy_weights = None):
+        self.offset_matrix = numpy.log(1.0 / initial_payoff_matrix - 1.0)
+        if strategy_weights is None: strategy_weights = initial_payoff_matrix.shape[0]
+        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative)
     
-    def handicapFunction(self, rowIndex, colIndex, rowHandicap, colHandicap):
-        offset = self.offsetMatrix[rowIndex, colIndex]
-        return 1.0 / (1.0 + numpy.exp(rowHandicap - colHandicap + offset)) - 0.5
+    def handicap_function(self, row_index, col_index, row_handicap, col_handicap):
+        offset = self.offset_matrix[row_index, col_index]
+        return 1.0 / (1.0 + numpy.exp(row_handicap - col_handicap + offset)) - 0.5
         
-    def rowDerivative(self, rowIndex, colIndex, rowHandicap, colHandicap):
-        payoff = self.handicapFunction(rowIndex, colIndex, rowHandicap, colHandicap)
+    def row_derivative(self, row_index, col_index, row_handicap, col_handicap):
+        payoff = self.handicap_function(row_index, col_index, row_handicap, col_handicap)
         return payoff * payoff - 0.25
