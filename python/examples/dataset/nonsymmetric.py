@@ -1,13 +1,16 @@
 import numpy
 
 class NonSymmetricDataset():
-    def __init__(self, data, rowNames, colNames):
+    def __init__(self, data, rowNames, colNames = None):
         self.data = data
         self.rowNames = rowNames
+        if colNames is None: colNames = rowNames
         self.colNames = colNames
 
 # Pokemon type charts. Source: https://bulbapedia.bulbagarden.net/wiki/Type/Type_chart
 
+pokemonTypes1 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 
+    'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', ]
 pokemonTypeChart1 = NonSymmetricDataset(
     numpy.array([
         [1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,],
@@ -25,10 +28,10 @@ pokemonTypeChart1 = NonSymmetricDataset(
         [1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0,],
         [1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.5, 2.0, 1.0, 1.0, 0.5, 2.0,],
         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0,],
-        ]),
-    ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost',
-     'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', ])
+        ]), pokemonTypes1)
 
+pokemonTypes2 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
+     'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark']
 pokemonTypeChart2 = NonSymmetricDataset(
     numpy.array([
         [1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,],
@@ -48,9 +51,7 @@ pokemonTypeChart2 = NonSymmetricDataset(
         [1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5, 2.0, 1.0, 1.0, 0.5, 2.0, 1.0,],
         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0,],
         [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5,],
-        ]),
-    ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
-     'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'])
+        ]), pokemonTypes2)
 
 pokemonTypes6 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
      'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark', 'Fairy', ]
@@ -74,6 +75,4 @@ pokemonTypeChart6 = NonSymmetricDataset(
         [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 0.0,],
         [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5, 0.5,],
         [1.0, 2.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0,],
-        ]),
-    pokemonTypes6, 
-    pokemonTypes6)
+        ]), pokemonTypes6)
