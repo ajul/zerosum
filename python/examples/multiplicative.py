@@ -5,6 +5,6 @@ from dataset.nonsymmetric import pokemonTypeChart6
 
 balance = zerosum.balance.MultiplicativeBalance(pokemonTypeChart6.data)
 
-result = balance.optimize(check_jacobian_epsilon = True)
+result = balance.optimize(check_derivative_epsilon = None)
 
 print(result)

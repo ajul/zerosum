@@ -6,6 +6,6 @@ init = ssf2t.sortedBySum()
 
 balance = zerosum.balance.LogisticSymmetricBalance(init.data)
 
-result = balance.optimize(check_jacobian_epsilon = True)
+result = balance.optimize(check_derivative_epsilon = None)
 
 print(result)

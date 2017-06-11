@@ -15,32 +15,90 @@ def _processWeights(arg):
     
     return count, weights, objectiveWeights
     
-def jacobian_fd(func, shape, epsilon = None):
-    if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
-    outputCount, inputCount = shape
-    def result(x):
-        J = numpy.zeros(shape)
-        
-        for inputIndex in range(inputCount):
-            xdp = x.copy()
-            xdp[inputIndex] += epsilon * 0.5
-            
-            xdn = x.copy()
-            xdn[inputIndex] -= epsilon * 0.5
-            
-            J[:, inputIndex] = (func(xdp) - func(xdn)) / epsilon
-        
-        return J
-    return result
-    
 class Balance():
+    def jacobian_fd(self, epsilon = None):
+        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        def result(x):
+            J = numpy.zeros((self.xCount, self.xCount))
+            
+            for inputIndex in range(self.xCount):
+                xdp = x.copy()
+                xdp[inputIndex] += epsilon * 0.5
+                
+                xdn = x.copy()
+                xdn[inputIndex] -= epsilon * 0.5
+                
+                J[:, inputIndex] = (self.objective(xdp) - self.objective(xdn)) / epsilon
+            
+            return J
+        return result
+
     def check_jacobian(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.totalCount)
+        if x is None: x = numpy.zeros(self.xCount)
         J = self.jacobian(x)
-        jac_fd = jacobian_fd(self.objective, J.shape, epsilon = epsilon)
+        jac_fd = self.jacobian_fd(epsilon = epsilon)
         result = J - jac_fd(x)
         print('Maximum difference between evaluated Jacobian and finite difference:', numpy.max(numpy.abs(result)))
         return result
+        
+    def check_rowDerivative(self, x = None, epsilon = None):
+        if x is None: x = numpy.zeros(self.xCount)
+        result = self.rowDerivativeMatrix(x) - self.rowDerivativeMatrix_fd(x, epsilon)
+        print('Maximum difference between evaluated rowDerivative and finite difference:', numpy.max(numpy.abs(result)))
+        return result
+    
+    def check_colDerivative(self, x = None, epsilon = None):
+        if x is None: x = numpy.zeros(self.xCount)
+        result = self.colDerivativeMatrix(x) - self.colDerivativeMatrix_fd(x, epsilon)
+        print('Maximum difference between evaluated colDerivative and finite difference:', numpy.max(numpy.abs(result)))
+        return result
+        
+    def evaluateF(self, rowHandicaps, colHandicaps):
+        F = numpy.zeros((self.rowCount, self.colCount))
+        
+        for rowIndex in range(self.rowCount):
+            for colIndex in range(self.colCount):
+                F[rowIndex, colIndex] = self.handicapFunction(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+                
+        return F
+        
+    def rowDerivativeMatrix_fd(self, x, epsilon = None):
+        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        rowHandicapsN = x[:self.rowCount] - epsilon * 0.5
+        rowHandicapsP = x[:self.rowCount] + epsilon * 0.5
+        colHandicaps = x[-self.colCount:]
+        return (self.evaluateF(rowHandicapsP, colHandicaps) - self.evaluateF(rowHandicapsN, colHandicaps)) / epsilon
+        
+    def colDerivativeMatrix_fd(self, x, epsilon = None):
+        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        rowHandicaps = x[:self.rowCount]
+        colHandicapsN = x[-self.colCount:] - epsilon * 0.5
+        colHandicapsP = x[-self.colCount:] + epsilon * 0.5
+        return (self.evaluateF(rowHandicaps, colHandicapsP) - self.evaluateF(rowHandicaps, colHandicapsN)) / epsilon
+        
+    def rowDerivativeMatrix(self, x):
+        rowHandicaps = x[:self.rowCount]
+        colHandicaps = x[-self.colCount:]
+        
+        dFdr = numpy.zeros((self.rowCount, self.colCount))
+        
+        for rowIndex in range(self.rowCount):
+            for colIndex in range(self.colCount):
+                dFdr[rowIndex, colIndex] = self.rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        
+        return dFdr
+        
+    def colDerivativeMatrix(self, x):
+        rowHandicaps = x[:self.rowCount]
+        colHandicaps = x[-self.colCount:]
+        
+        dFdc = numpy.zeros((self.rowCount, self.colCount))
+        
+        for rowIndex in range(self.rowCount):
+            for colIndex in range(self.colCount):
+                dFdc[rowIndex, colIndex] = self.colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        
+        return dFdc
 
 class NonSymmetricBalance(Balance):
     def __init__(self, handicapFunction, rowWeights, colWeights = None, rowDerivative = None, colDerivative = None):
@@ -55,22 +113,13 @@ class NonSymmetricBalance(Balance):
         self.rowCount, self.rowWeights, self.rowObjectiveWeights = _processWeights(rowWeights)
         self.colCount, self.colWeights, self.colObjectiveWeights = _processWeights(colWeights)
         
-        self.totalCount = self.rowCount + self.colCount
+        self.xCount = self.rowCount + self.colCount
         
-    def evaluateF(self, x):
-        rowHandicaps = x[:self.rowCount]
-        colHandicaps = x[-self.colCount:]
-        
-        F = numpy.zeros((self.rowCount, self.colCount))
-        
-        for rowIndex in range(self.rowCount):
-            for colIndex in range(self.colCount):
-                F[rowIndex, colIndex] = self.handicapFunction(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
-                
-        return F
+    def evaluateFx(self, x):
+        return self.evaluateF(x[:self.rowCount], x[-self.colCount:])
         
     def objective(self, x):
-        F = self.evaluateF(x)
+        F = self.evaluateFx(x)
         
         # dot products are weighted 
         rowObjectives = numpy.tensordot(F, self.colWeights, axes = ([1], [0])) * self.rowObjectiveWeights
@@ -80,16 +129,9 @@ class NonSymmetricBalance(Balance):
         
     def jacobian(self, x):
         # J_ij = derivative of payoff i with respect to handicap j
-        rowHandicaps = x[:self.rowCount]
-        colHandicaps = x[-self.colCount:]
         
-        dFdr = numpy.zeros((self.rowCount, self.colCount))
-        dFdc = numpy.zeros((self.rowCount, self.colCount))
-        
-        for rowIndex in range(self.rowCount):
-            for colIndex in range(self.colCount):
-                dFdr[rowIndex, colIndex] = self.rowDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
-                dFdc[rowIndex, colIndex] = self.colDerivative(rowIndex, colIndex, rowHandicaps[rowIndex], colHandicaps[colIndex])
+        dFdr = self.rowDerivativeMatrix(x)
+        dFdc = self.colDerivativeMatrix(x)
         
         # derivative of row payoffs with respect to row handicaps
         Jrr = numpy.tensordot(dFdr, self.colWeights, axes = ([1], [0])) * self.rowObjectiveWeights
@@ -112,38 +154,44 @@ class NonSymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, check_jacobian_epsilon = None, *args, **kwargs):
+    def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
         if self.rowDerivative is None or self.colDerivative is None:
             jac = None
         else:
             jac = self.jacobian
             
-        if check_jacobian_epsilon is None:
-            fun = self.objective
-        else:
-            epsilon = check_jacobian_epsilon
-            if epsilon is True: epsilon = None
-            def fun(x):
-                self.check_jacobian(x, epsilon = epsilon)
-                return self.objective(x)
+        def fun(x):
+            if check_derivative_epsilon is not False:
+                self.check_rowDerivative(x, epsilon = check_derivative_epsilon)
+                self.check_colDerivative(x, epsilon = check_derivative_epsilon)
+            if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            return self.objective(x)   
         
-        x0 = numpy.zeros((self.totalCount))
+        x0 = numpy.zeros((self.xCount))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.rowHandicaps = result.x[:self.rowCount]
         result.colHandicaps = result.x[-self.colCount:]
-        result.F = self.evaluateF(result.x)
+        result.F = self.evaluateFx(result.x)
         
         return result
 
 class SymmetricBalance(Balance):
     def __init__(self, handicapFunction, strategyWeights, rowDerivative = None):
-        self.totalCount, self.strategyWeights, self.strategyObjectiveWeights = _processWeights(strategyWeights)
+        self.xCount, self.strategyWeights, self.strategyObjectiveWeights = _processWeights(strategyWeights)
+        self.rowCount = self.xCount
+        self.colCount = self.xCount
         
-    def evaluateF(self, x):
-        F = numpy.zeros((self.totalCount, self.totalCount))
+        if rowDerivative is None:
+            self.colDerivative = None
+   
+    def colDerivative(self, rowIndex, colIndex, rowHandicap, colHandicap): 
+        return -self.rowDerivative(colIndex, rowIndex, colHandicap, rowHandicap)
         
-        for rowIndex in range(self.totalCount-1):
-            for colIndex in range(rowIndex+1, self.totalCount):
+    def evaluateFx(self, x):
+        F = numpy.zeros((self.xCount, self.xCount))
+        
+        for rowIndex in range(self.xCount-1):
+            for colIndex in range(rowIndex+1, self.xCount):
                 payoff = self.handicapFunction(rowIndex, colIndex, x[rowIndex], x[colIndex])
                 F[rowIndex, colIndex] = payoff
                 F[colIndex, rowIndex] = -payoff
@@ -151,7 +199,7 @@ class SymmetricBalance(Balance):
         return F
         
     def objective(self, x):
-        F = self.evaluateF(x)
+        F = self.evaluateFx(x)
         
         # dot products are weighted 
         objectives = numpy.tensordot(F, self.strategyWeights, axes = ([1], [0])) * self.strategyObjectiveWeights
@@ -159,12 +207,7 @@ class SymmetricBalance(Balance):
         return objectives
         
     def jacobian(self, x):
-        dFdr = numpy.zeros((self.totalCount, self.totalCount))
-        
-        for rowIndex in range(self.totalCount):
-            for colIndex in range(self.totalCount):
-                payoffDerivative = self.rowDerivative(rowIndex, colIndex, x[rowIndex], x[colIndex])
-                dFdr[rowIndex, colIndex] = payoffDerivative
+        dFdr = self.rowDerivativeMatrix(x)
         
         # derivative of row payoffs with respect to row handicaps
         Jrr = numpy.tensordot(dFdr, self.strategyWeights, axes = ([1], [0])) * self.strategyObjectiveWeights
@@ -178,25 +221,23 @@ class SymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, check_jacobian_epsilon = None, *args, **kwargs):
+    def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
         if self.rowDerivative is None:
             jac = None
         else:
             jac = self.jacobian
             
-        if check_jacobian_epsilon is None:
-            fun = self.objective
-        else:
-            epsilon = check_jacobian_epsilon
-            if epsilon is True: epsilon = None
-            def fun(x):
-                self.check_jacobian(x, epsilon = epsilon)
-                return self.objective(x)
+        def fun(x):
+            if check_derivative_epsilon is not False:
+                self.check_rowDerivative(x, epsilon = check_derivative_epsilon)
+                self.check_colDerivative(x, epsilon = check_derivative_epsilon)
+            if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            return self.objective(x)      
             
-        x0 = numpy.zeros((self.totalCount))
+        x0 = numpy.zeros((self.xCount))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.handicaps = result.x
-        result.F = self.evaluateF(result.x)
+        result.F = self.evaluateFx(result.x)
         return result
     
 class MultiplicativeBalance(NonSymmetricBalance):
