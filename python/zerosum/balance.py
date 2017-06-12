@@ -278,3 +278,8 @@ class LogisticSymmetricBalance(SymmetricBalance):
     def row_derivative(self, row_index, col_index, row_handicap, col_handicap):
         payoff = self.handicap_function(row_index, col_index, row_handicap, col_handicap)
         return payoff * payoff - 0.25
+        
+    def optimize(self, *args, **kwargs):
+        result = SymmetricBalance.optimize(self, *args, **kwargs)
+        result.F = result.F + 0.5
+        return result

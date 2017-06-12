@@ -1,3 +1,4 @@
+import dataset.csv
 import numpy
 
 class MatchupDataset():
@@ -17,15 +18,6 @@ class MatchupDataset():
         newData = self.data[idx, :][:, idx]
         newNames = list(self.names[i] for i in idx)
         return MatchupDataset(newData, newNames)
-        
-    def to_csv(self):
-        result = ',' + ','.join(self.names) + '\n'
-        for i in range(self.data.shape[0]):
-            result += self.names[i] + ','
-            for j in range(self.data.shape[1]):
-                result += ('%f' % self.data[i, j]) + ','
-            result += '\n'
-        return result
 
 # Super Smash Bros. 64. Source: https://www.ssbwiki.com/Character_matchup_(SSB)
 ssb64 = MatchupDataset(
