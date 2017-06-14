@@ -10,13 +10,19 @@ import matplotlib.pyplot as plt
 # Balances the Pokemon type chart using a multiplicative handicap function.
 # Plots the handicaps versus Nash equilibrium of the original game.
 
+# Initial payoff matrix.
 data = dataset.nonsymmetric.pokemon_type_chart_6
+# Names of the Pokemon types.
 names = dataset.nonsymmetric.pokemon_type_names_6
+# Vector of color codes for the types.
 colors = [dataset.nonsymmetric.pokemon_type_colors[name] for name in names]
 
+# Nash equilibrium of the initial game.
 row_nash, col_nash = zerosum.nash.nash(data)
+# Handicaps producing a uniform Nash equilibrium.
 balance = zerosum.balance.MultiplicativeBalance(data).optimize()
 
+# Now to plot.
 dpi = 240
 marker_size = 64
 text_size = 15

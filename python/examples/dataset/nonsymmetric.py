@@ -29,7 +29,7 @@ pokemon_type_chart_1 = numpy.array([
     [1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.5, 2.0, 1.0, 1.0, 0.5, 2.0,],
     [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0,],
     ])
-pokemon_dataset_1 = NonSymmetricDataset(pokemon_type_chart_1, pokemon_type_names_1)
+pokemon_1 = NonSymmetricDataset(pokemon_type_chart_1, pokemon_type_names_1)
 
 pokemon_type_names_2 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
      'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark']
@@ -52,7 +52,7 @@ pokemon_type_chart_2 = numpy.array([
     [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0,],
     [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5,],
     ])
-pokemon_dataset_2 = NonSymmetricDataset(pokemon_type_chart_2, pokemon_type_names_2)
+pokemon_2 = NonSymmetricDataset(pokemon_type_chart_2, pokemon_type_names_2)
 
 pokemon_type_names_6 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
      'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark', 'Fairy', ]
@@ -76,7 +76,7 @@ pokemon_type_chart_6 = numpy.array([
     [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5, 0.5,],
     [1.0, 2.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0,],
     ])
-pokemon_dataset_6 = NonSymmetricDataset(pokemon_type_chart_6, pokemon_type_names_6)
+pokemon_6 = NonSymmetricDataset(pokemon_type_chart_6, pokemon_type_names_6)
         
 pokemon_type_colors = {
     'Normal' : '#A8A878',
