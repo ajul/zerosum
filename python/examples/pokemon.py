@@ -7,8 +7,8 @@ import zerosum.nash
 import matplotlib
 import matplotlib.pyplot as plt
 
-# plots handicaps (using a multiplicative handicap function)
-# versus Nash equilibrium of the original game
+# Balances the Pokemon type chart using a multiplicative handicap function.
+# Plots the handicaps versus Nash equilibrium of the original game.
 
 data = dataset.nonsymmetric.pokemon_type_chart_6
 names = dataset.nonsymmetric.pokemon_type_names_6
@@ -22,12 +22,12 @@ marker_size = 64
 text_size = 15
 loc = matplotlib.ticker.MultipleLocator(base=0.1)
 
-# plot attacker and defender on separate subplots
+# Plot attacker and defender on separate subplots. Attacker first.
 fig = plt.figure(figsize = (12, 7))
 gs = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[2, 3])
 ax = plt.subplot(gs[0])
 
-# draw a line indicating where the uniform distribution would be
+# Draw a line indicating where the uniform distribution would be.
 uniform_x = 1.0 / len(row_nash.strategy)
 ax.plot([uniform_x, uniform_x], [-0.2, 0.25],
         color='#bfbfbf', linestyle='-', zorder=0)
@@ -36,13 +36,13 @@ plt.text(uniform_x, -0.203, 'Uniform',
          rotation = 0,
          ha = 'center', va = 'top')
 
-# scatter plot of handicaps vs. nash
+# Scatter plot of handicaps vs. Nash of initial game.
 x = row_nash.strategy
 y = balance.row_log_handicaps
 
 ax.scatter(x, y, s = marker_size, c = colors)
 
-# label each scatter plot point with the type name
+# Label each scatter plot point with the type name.
 for pointx, pointy, name, color in zip(x, y, names, colors):
     ha = 'left'
     # manual adjustment
@@ -72,7 +72,7 @@ ax.set_ylabel('Log (handicap) producing uniform Nash', fontsize = text_size)
 ax.set_xlim(left=0.0, right = 0.2)
 ax.set_ylim(bottom=-0.2, top = 0.25)
 
-# now for the defender plot
+# Now for the defender plot.
 ax = plt.subplot(gs[1])
 
 uniform_x = 1.0 / len(col_nash.strategy)
