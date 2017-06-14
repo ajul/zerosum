@@ -16,7 +16,20 @@ def _process_weights(arg):
     return count, weights, objective_weights
     
 class Balance():
+    # Base class for balancing.
+    
+    def evaluate_F(self, row_handicaps, col_handicaps):
+        # Evaluates the payoff matrix F for a given set of handicap variable vectors.
+        F = numpy.zeros((self.row_count, self.col_count))
+        
+        for row_index in range(self.row_count):
+            for col_index in range(self.col_count):
+                F[row_index, col_index] = self.handicap_function(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
+                
+        return F
+    
     def jacobian_fd(self, epsilon = None):
+        # Computes a finite (central) difference approximation of the Jacobian.
         if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
         def result(x):
             J = numpy.zeros((self.x_count, self.x_count))
@@ -34,6 +47,7 @@ class Balance():
         return result
 
     def check_jacobian(self, x = None, epsilon = None):
+        # Checks the Jacobian computed from the handicap function derivatives against a finite difference approximation.
         if x is None: x = numpy.zeros(self.x_count)
         J = self.jacobian(x)
         jac_fd = self.jacobian_fd(epsilon = epsilon)
@@ -41,42 +55,8 @@ class Balance():
         print('Maximum difference between evaluated Jacobian and finite difference:', numpy.max(numpy.abs(result)))
         return result
         
-    def check_row_derivative(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.x_count)
-        result = self.row_derivative_matrix(x) - self.row_derivative_matrix_fd(x, epsilon)
-        print('Maximum difference between evaluated row_derivative and finite difference:', numpy.max(numpy.abs(result)))
-        return result
-    
-    def check_col_derivative(self, x = None, epsilon = None):
-        if x is None: x = numpy.zeros(self.x_count)
-        result = self.col_derivative_matrix(x) - self.col_derivative_matrix_fd(x, epsilon)
-        print('Maximum difference between evaluated col_derivative and finite difference:', numpy.max(numpy.abs(result)))
-        return result
-        
-    def evaluate_F(self, row_handicaps, col_handicaps):
-        F = numpy.zeros((self.row_count, self.col_count))
-        
-        for row_index in range(self.row_count):
-            for col_index in range(self.col_count):
-                F[row_index, col_index] = self.handicap_function(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
-                
-        return F
-        
-    def row_derivative_matrix_fd(self, x, epsilon = None):
-        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
-        row_handicaps_N = x[:self.row_count] - epsilon * 0.5
-        row_handicaps_P = x[:self.row_count] + epsilon * 0.5
-        col_handicaps = x[-self.col_count:]
-        return (self.evaluate_F(row_handicaps_P, col_handicaps) - self.evaluate_F(row_handicaps_N, col_handicaps)) / epsilon
-        
-    def col_derivative_matrix_fd(self, x, epsilon = None):
-        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
-        row_handicaps = x[:self.row_count]
-        col_handicaps_N = x[-self.col_count:] - epsilon * 0.5
-        col_handicaps_P = x[-self.col_count:] + epsilon * 0.5
-        return (self.evaluate_F(row_handicaps, col_handicaps_P) - self.evaluate_F(row_handicaps, col_handicaps_N)) / epsilon
-        
     def row_derivative_matrix(self, x):
+        # Computes a matrix consisting of the derivative of the handicap function with respect to the corresponding row handicap.
         row_handicaps = x[:self.row_count]
         col_handicaps = x[-self.col_count:]
         
@@ -89,6 +69,7 @@ class Balance():
         return dFdr
         
     def col_derivative_matrix(self, x):
+        # Computes a matrix consisting of the derivative of the handicap function with respect to the corresponding column handicap.
         row_handicaps = x[:self.row_count]
         col_handicaps = x[-self.col_count:]
         
@@ -99,9 +80,46 @@ class Balance():
                 dFdc[row_index, col_index] = self.col_derivative(row_index, col_index, row_handicaps[row_index], col_handicaps[col_index])
         
         return dFdc
+        
+    def row_derivative_matrix_fd(self, x, epsilon = None):
+        # Computes a finite (central) difference approximation of derivative of the handicap function with respect to the corresponding row handicap.
+        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        row_handicaps_N = x[:self.row_count] - epsilon * 0.5
+        row_handicaps_P = x[:self.row_count] + epsilon * 0.5
+        col_handicaps = x[-self.col_count:]
+        return (self.evaluate_F(row_handicaps_P, col_handicaps) - self.evaluate_F(row_handicaps_N, col_handicaps)) / epsilon
+        
+    def col_derivative_matrix_fd(self, x, epsilon = None):
+        # Computes a finite (central) difference approximation of derivative of the handicap function with respect to the corresponding column handicap.
+        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        row_handicaps = x[:self.row_count]
+        col_handicaps_N = x[-self.col_count:] - epsilon * 0.5
+        col_handicaps_P = x[-self.col_count:] + epsilon * 0.5
+        return (self.evaluate_F(row_handicaps, col_handicaps_P) - self.evaluate_F(row_handicaps, col_handicaps_N)) / epsilon
+        
+    def check_row_derivative(self, x = None, epsilon = None):
+        # Checks the derivative of the handicap function with respect to the corresponding row handicap against a finite difference approximation.
+        if x is None: x = numpy.zeros(self.x_count)
+        result = self.row_derivative_matrix(x) - self.row_derivative_matrix_fd(x, epsilon)
+        print('Maximum difference between evaluated row_derivative and finite difference:', numpy.max(numpy.abs(result)))
+        return result
+    
+    def check_col_derivative(self, x = None, epsilon = None):
+        # Checks the derivative of the handicap function with respect to the corresponding column handicap against a finite difference approximation.
+        if x is None: x = numpy.zeros(self.x_count)
+        result = self.col_derivative_matrix(x) - self.col_derivative_matrix_fd(x, epsilon)
+        print('Maximum difference between evaluated col_derivative and finite difference:', numpy.max(numpy.abs(result)))
+        return result
 
 class NonSymmetricBalance(Balance):
-    def __init__(self, handicap_function, row_weights, col_weights = None, row_derivative = None, col_derivative = None):
+    def __init__(self, handicap_function, row_weights, col_weights, row_derivative = None, col_derivative = None):
+        # handicap_function: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
+        #     and produces the (row_index, col_index) element of the payoff matrix. 
+        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically in col_derivative for every element. 
+        # row_weights, col_weights: Defines the desired Nash equilibrium in terms of row and column strategy probability weights. 
+        #     If only an integer is specified, a uniform distribution will be used.
+        # row_derivative, col_derivative: Functions that take the arguments row_index, col_index, row_handicap, col_handicap 
+        #     and produce the derviative of the (row_index, col_index) element of the payoff matrix with respect to the row or column handicap.
         self.handicap_function = handicap_function
         
         if (row_derivative is None) != (col_derivative is None):
@@ -116,18 +134,24 @@ class NonSymmetricBalance(Balance):
         self.x_count = self.row_count + self.col_count
         
     def evaluate_Fx(self, x):
+        # Evaluate F in terms of the variables, namely the handicap variable vectors.
         return self.evaluate_F(x[:self.row_count], x[-self.col_count:])
         
     def objective(self, x):
+        # Compute the objective vector, which is desired to be zero. This is the expected payoff of each strategy for that player, times the weight of that stategy.
+        # In order to balance them at the edge of being played, zero-weighted strategies are given a weight of 1.0. This works since they do not affect the expected payoff of other strategies.
+    
         F = self.evaluate_Fx(x)
         
         # dot products are weighted 
         row_objectives = numpy.tensordot(F, self.col_weights, axes = ([1], [0])) * self.rowobjective_weights
-        col_objectives = numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
+        col_objectives = -numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
         
         return numpy.concatenate((row_objectives, col_objectives))
         
     def jacobian(self, x):
+        # Compute the Jacobian of the objective using the provided row_derivative, col_derivative.
+        
         # J_ij = derivative of payoff i with respect to handicap j
         
         dFdr = self.row_derivative_matrix(x)
@@ -138,14 +162,14 @@ class NonSymmetricBalance(Balance):
         Jrr = numpy.diag(Jrr)
         
         # derivative of col payoffs with respect to col handicaps
-        Jcc = numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
+        Jcc = -numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
         Jcc = numpy.diag(Jcc)
         
         # derivative of row payoffs with respect to col handicaps
         Jrc = dFdc * self.col_weights[None, :] * self.rowobjective_weights[:, None]
         
         # derivative of col payoffs with respect to row handicaps
-        Jcr = dFdr * self.row_weights[:, None] * self.colobjective_weights[None, :]
+        Jcr = -dFdr * self.row_weights[:, None] * self.colobjective_weights[None, :]
         Jcr = numpy.transpose(Jcr)
         
         # assemble full Jacobian
@@ -155,6 +179,10 @@ class NonSymmetricBalance(Balance):
         return J
         
     def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+        # Compute the handicaps that balance the game using scipy.optimize.root.
+        # check_derivative_epsilon, check_jacobian_epsilon can be used to check the provided row_derivative, col_derivative against a finite difference approximation.
+        #     A value of None uses a default value.
+        # *args, **kwargs are passed to using scipy.optimize.root.
         if self.row_derivative is None or self.col_derivative is None:
             jac = None
         else:
@@ -177,17 +205,30 @@ class NonSymmetricBalance(Balance):
 
 class SymmetricBalance(Balance):
     def __init__(self, handicap_function, strategy_weights, row_derivative = None):
+        # This version is for symmetric games, where both players are choosing from the same set of strategies.
+        # Thus there are no independent inputs for column strategies.
+        
+        # handicap_function: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
+        #     and produces the (row_index, col_index) element of the payoff matrix. 
+        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically in col_derivative for every element. 
+        #     NOTE: In this symmetric case the function should also have the property that 
+        #     handicap_function(row_index, col_index, row_handicap, col_handicap) = -handicap_function(col_index, row_index, col_handicap, row_handicap)
+        #     This means that for any setting of the handicaps the payoff matrix is skew-symmetric.
+        # strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
+        #     If only an integer is specified, a uniform distribution will be used.
+        # row_derivative: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
+        #     and produces the derviative of the (row_index, col_index) element of the payoff matrix with respect to the row handicap.
         self.x_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.x_count
         self.col_count = self.x_count
         
-        if row_derivative is None:
-            self.col_derivative = None
+        if row_derivative is not None:
+            self.row_derivative = row_derivative
+            # Using the skew-symmetric property.
+            self.col_derivative = lambda row_index, col_index, row_handicap, col_handicap: -row_derivative(col_index, row_index, col_handicap, row_handicap)
    
-    def col_derivative(self, row_index, col_index, row_handicap, col_handicap): 
-        return -self.row_derivative(col_index, row_index, col_handicap, row_handicap)
-        
     def evaluate_Fx(self, x):
+        # Evaluate F in terms of the variables, namely the shared handicap variable vector. This uses the fact that the matrix is skew-symmetric.
         F = numpy.zeros((self.x_count, self.x_count))
         
         for row_index in range(self.x_count-1):
@@ -199,6 +240,9 @@ class SymmetricBalance(Balance):
         return F
         
     def objective(self, x):
+        # Compute the objective vector, which is desired to be zero. This is the expected payoff of each strategy for that player, times the weight of that stategy.
+        # In order to balance them at the edge of being played, zero-weighted strategies are given a weight of 1.0. This works since they do not affect the expected payoff of other strategies.
+        
         F = self.evaluate_Fx(x)
         
         # dot products are weighted 
@@ -207,6 +251,7 @@ class SymmetricBalance(Balance):
         return objectives
         
     def jacobian(self, x):
+        # Compute the Jacobian of the objective using the provided row_derivative.
         dFdr = self.row_derivative_matrix(x)
         
         # derivative of row payoffs with respect to row handicaps
@@ -222,6 +267,11 @@ class SymmetricBalance(Balance):
         return J
         
     def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+        # Compute the handicaps that balance the game using scipy.optimize.root.
+        # check_derivative_epsilon, check_jacobian_epsilon can be used to check the provided row_derivative, col_derivative against a finite difference approximation.
+        #     A value of None uses a default value.
+        # *args, **kwargs are passed to using scipy.optimize.root.
+        
         if self.row_derivative is None:
             jac = None
         else:
