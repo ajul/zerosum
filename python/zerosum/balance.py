@@ -192,7 +192,8 @@ class NonSymmetricBalance(Balance):
             if check_derivative_epsilon is not False:
                 self.check_row_derivative(x, epsilon = check_derivative_epsilon)
                 self.check_col_derivative(x, epsilon = check_derivative_epsilon)
-            if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            if check_jacobian_epsilon is not False: 
+                self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)   
         
         x0 = numpy.zeros((self.x_count))
@@ -281,7 +282,8 @@ class SymmetricBalance(Balance):
             if check_derivative_epsilon is not False:
                 self.check_row_derivative(x, epsilon = check_derivative_epsilon)
                 self.check_col_derivative(x, epsilon = check_derivative_epsilon)
-            if check_jacobian_epsilon is not False: self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            if check_jacobian_epsilon is not False: 
+                self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)      
             
         x0 = numpy.zeros((self.x_count))
@@ -291,6 +293,7 @@ class SymmetricBalance(Balance):
         return result
     
 class MultiplicativeBalance(NonSymmetricBalance):
+    # A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None):
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
@@ -308,6 +311,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
     
     def optimize(self, *args, **kwargs):
+        # The actual optimization is done using the log of the handicaps.
         result = NonSymmetricBalance.optimize(self, *args, **kwargs)
         result.row_log_handicaps = result.row_handicaps
         result.col_log_handicaps = result.col_handicaps
@@ -316,6 +320,9 @@ class MultiplicativeBalance(NonSymmetricBalance):
         return result
     
 class LogisticSymmetricBalance(SymmetricBalance):
+    # A special case where the handicap functions are logistic functions who argument is row_handicap - col_handicap + offset, 
+    #     where offset is chosen so that when all handicaps are zero the initial_payoff is recovered.
+    # Payoffs are in (0, 1).
     def __init__(self, initial_payoff_matrix, strategy_weights = None):
         self.offset_matrix = numpy.log(1.0 / initial_payoff_matrix - 1.0)
         if strategy_weights is None: strategy_weights = initial_payoff_matrix.shape[0]
