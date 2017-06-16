@@ -9,8 +9,8 @@ class MatchupDataset():
     # normalizes data to have a mean of 0.5
     def canonicalize(self, data):
         data = numpy.array(data, dtype='float64')
-        if numpy.min(data) >= 0.0:
-            data *= 0.5 / numpy.mean(data)
+        if data[0, 0] >= 0.0:
+            data *= 0.5 / data[0, 0]
         return data
         
     def sorted_by_sum(self):
