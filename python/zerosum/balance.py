@@ -16,6 +16,12 @@ def _process_weights(arg):
     
     return count, weights, objective_weights
     
+class DerivativeWarning(RuntimeWarning):
+    pass
+    
+class InitialPayoffMatrixWarning(RuntimeWarning):
+    pass
+    
 class Balance():
     # Base class for balancing.
     
@@ -107,7 +113,7 @@ class Balance():
         if numpy.any(direct >= 0.0) or numpy.any(fd >= 0.0):
             msg = 'Found a non-negative row derivative for\nx = %s.' % x
             msg += '\nIt is highly desirable that the handicap function be strictly monotonically decreasing in the row handicap.'
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, DerivativeWarning)
         result = direct - fd
         print('Maximum difference between evaluated row_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
@@ -121,7 +127,7 @@ class Balance():
         if numpy.any(direct <= 0.0) or numpy.any(fd <= 0.0):
             msg = 'Found a non-positive column derivative for\nx = %s.' % x
             msg += '\nIt is highly desirable that the handicap function be strictly monotonically increasing in the column handicap.'
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, DerivativeWarning)
         result = direct - fd
         print('Maximum difference between evaluated col_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
@@ -130,7 +136,7 @@ class NonSymmetricBalance(Balance):
     def __init__(self, handicap_function, row_weights, col_weights, row_derivative = None, col_derivative = None):
         # handicap_function: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
         #     and produces the (row_index, col_index) element of the payoff matrix. 
-        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically in col_derivative for every element. 
+        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically increasing in col_derivative for every element. 
         # row_weights, col_weights: Defines the desired Nash equilibrium in terms of row and column strategy probability weights. 
         #     If only an integer is specified, a uniform distribution will be used.
         # row_derivative, col_derivative: Functions that take the arguments row_index, col_index, row_handicap, col_handicap 
@@ -239,6 +245,7 @@ class SymmetricBalance(Balance):
         #     If only an integer is specified, a uniform distribution will be used.
         # row_derivative: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
         #     and produces the derviative of the (row_index, col_index) element of the payoff matrix with respect to the row handicap.
+        #     The skew-symmetry property means that the column derivative is the negative of the row derivative with the players interchanged.
         self.x_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.x_count
         self.col_count = self.x_count
@@ -363,13 +370,13 @@ class LogisticSymmetricBalance(SymmetricBalance):
         # Check skew-symmetry. 
         initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
         if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) should be skew-symmetric.' % (0.5 * self.max_payoff), RuntimeWarning)
+            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) should be skew-symmetric.' % (0.5 * self.max_payoff), InitialPayoffMatrixWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
             raise ValueError('All elements of initial_payoff_matrix must be in (0, max_payoff), where max_payoff = %f is twice the value of the game.' % self.max_payoff)
         if numpy.any(numpy.isclose(initial_payoff_matrix, 0.0)) or numpy.any(numpy.isclose(initial_payoff_matrix, self.max_payoff)):
-            warnings.warn('initial_payoff_matrix has elements close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, RuntimeWarning)
+            warnings.warn('initial_payoff_matrix has elements close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, InitialPayoffMatrixWarning)
             
         self.initial_payoff_matrix = initial_payoff_matrix
         self.initial_offset_matrix = numpy.log(self.max_payoff / initial_payoff_matrix - 1.0)
