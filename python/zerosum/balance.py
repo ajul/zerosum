@@ -100,15 +100,29 @@ class Balance():
         
     def check_row_derivative(self, x = None, epsilon = None):
         # Checks the derivative of the handicap function with respect to the corresponding row handicap against a finite difference approximation.
+        # Also checks that all row derivatives are negative.
         if x is None: x = numpy.zeros(self.x_count)
-        result = self.row_derivative_matrix(x) - self.row_derivative_matrix_fd(x, epsilon)
+        direct = self.row_derivative_matrix(x)
+        fd = self.row_derivative_matrix_fd(x, epsilon)
+        if numpy.any(direct >= 0.0) or numpy.any(fd >= 0.0):
+            msg = 'Found a non-negative row derivative for\nx = %s.' % x
+            msg += '\nIt is highly desirable that the handicap function be strictly monotonically decreasing in the row handicap.'
+            warnings.warn(msg, RuntimeWarning)
+        result = direct - fd
         print('Maximum difference between evaluated row_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
     
     def check_col_derivative(self, x = None, epsilon = None):
         # Checks the derivative of the handicap function with respect to the corresponding column handicap against a finite difference approximation.
+        # Also checks that all column derivatives are negative.
         if x is None: x = numpy.zeros(self.x_count)
-        result = self.col_derivative_matrix(x) - self.col_derivative_matrix_fd(x, epsilon)
+        direct = self.col_derivative_matrix(x)
+        fd = self.col_derivative_matrix_fd(x, epsilon)
+        if numpy.any(direct <= 0.0) or numpy.any(fd <= 0.0):
+            msg = 'Found a non-positive column derivative for\nx = %s.' % x
+            msg += '\nIt is highly desirable that the handicap function be strictly monotonically increasing in the column handicap.'
+            warnings.warn(msg, RuntimeWarning)
+        result = direct - fd
         print('Maximum difference between evaluated col_derivative and finite difference:', numpy.max(numpy.abs(result)))
         return result
 
