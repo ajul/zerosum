@@ -335,7 +335,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
         
         if numpy.any(initial_payoff_matrix < 0.0):
-            warnings.warn('initial_payoff_matrix has negative elements.' % self.max_payoff, InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix has negative element(s).', InitialPayoffMatrixWarning)
     
         NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, row_derivative = self.row_derivative, col_derivative = self.col_derivative)
 
