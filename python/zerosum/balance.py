@@ -149,8 +149,8 @@ class NonSymmetricBalance(Balance):
         self.row_derivative = row_derivative
         self.col_derivative = col_derivative
     
-        self.row_count, self.row_weights, self.rowobjective_weights = _process_weights(row_weights)
-        self.col_count, self.col_weights, self.colobjective_weights = _process_weights(col_weights)
+        self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
+        self.col_count, self.col_weights, self.col_objective_weights = _process_weights(col_weights)
         
         self.x_count = self.row_count + self.col_count
         
@@ -164,36 +164,36 @@ class NonSymmetricBalance(Balance):
     
         F = self.evaluate_Fx(x)
         
-        # dot products are weighted 
-        row_objectives = numpy.tensordot(F, self.col_weights, axes = ([1], [0])) * self.rowobjective_weights
-        col_objectives = -numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
+        # Dot products are weighted.
+        row_objectives = numpy.tensordot(F, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
+        col_objectives = -numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
         
         return numpy.concatenate((row_objectives, col_objectives))
         
     def jacobian(self, x):
         # Compute the Jacobian of the objective using the provided row_derivative, col_derivative.
         
-        # J_ij = derivative of payoff i with respect to handicap j
+        # J_ij = derivative of payoff i with respect to handicap j.
         
         dFdr = self.row_derivative_matrix(x)
         dFdc = self.col_derivative_matrix(x)
         
-        # derivative of row payoffs with respect to row handicaps
-        Jrr = numpy.tensordot(dFdr, self.col_weights, axes = ([1], [0])) * self.rowobjective_weights
+        # Derivative of row payoffs with respect to row handicaps.
+        Jrr = numpy.tensordot(dFdr, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
         Jrr = numpy.diag(Jrr)
         
-        # derivative of col payoffs with respect to col handicaps
-        Jcc = -numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.colobjective_weights
+        # Derivative of col payoffs with respect to col handicaps.
+        Jcc = -numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
         Jcc = numpy.diag(Jcc)
         
-        # derivative of row payoffs with respect to col handicaps
-        Jrc = dFdc * self.col_weights[None, :] * self.rowobjective_weights[:, None]
+        # Derivative of row payoffs with respect to col handicaps.
+        Jrc = dFdc * self.col_weights[None, :] * self.row_objective_weights[:, None]
         
-        # derivative of col payoffs with respect to row handicaps
-        Jcr = -dFdr * self.row_weights[:, None] * self.colobjective_weights[None, :]
+        # Derivative of col payoffs with respect to row handicaps.
+        Jcr = -dFdr * self.row_weights[:, None] * self.col_objective_weights[None, :]
         Jcr = numpy.transpose(Jcr)
         
-        # assemble full Jacobian
+        # Assemble full Jacobian.
         J = numpy.bmat([[Jrr, Jrc],
                         [Jcr, Jcc]])
         
@@ -273,7 +273,7 @@ class SymmetricBalance(Balance):
         
         F = self.evaluate_Fx(x)
         
-        # dot products are weighted 
+        # Dot products are weighted .
         objectives = numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         
         return objectives
@@ -282,14 +282,15 @@ class SymmetricBalance(Balance):
         # Compute the Jacobian of the objective using the provided row_derivative.
         dFdr = self.row_derivative_matrix(x)
         
-        # derivative of row payoffs with respect to row handicaps
+        # Derivative of row payoffs with respect to row handicaps.
         Jrr = numpy.tensordot(dFdr, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         Jrr = numpy.diag(Jrr)
         
-        # derivative of row payoffs with respect to col handicaps
+        # Derivative of row payoffs with respect to col handicaps.
         dFdc = -numpy.transpose(dFdr)
         Jrc = dFdc * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
         
+        # Variables change both row and col handicaps at the same time, so Jacobian is the sum of their effects.
         J = Jrr + Jrc
         
         return J
@@ -326,10 +327,15 @@ class SymmetricBalance(Balance):
 class MultiplicativeBalance(NonSymmetricBalance):
     # A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
     # The actual optimization is done using the log of the handicaps.
+    
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None):
+        # initial_payoff_matrix: Should be nonnegative.
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
+        
+        if numpy.any(initial_payoff_matrix < 0.0):
+            warnings.warn('initial_payoff_matrix has negative elements.' % self.max_payoff, InitialPayoffMatrixWarning)
     
         NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, row_derivative = self.row_derivative, col_derivative = self.col_derivative)
 
@@ -370,7 +376,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         # Check skew-symmetry. 
         initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
         if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) should be skew-symmetric.' % (0.5 * self.max_payoff), InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) is not skew-symmetric.' % (0.5 * self.max_payoff), InitialPayoffMatrixWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
