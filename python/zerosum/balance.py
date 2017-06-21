@@ -380,9 +380,9 @@ class LogisticSymmetricBalance(SymmetricBalance):
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
-            raise ValueError('All elements of initial_payoff_matrix must be in (0, max_payoff), where max_payoff = %f is twice the value of the game.' % self.max_payoff)
+            raise ValueError('initial_payoff_matrix has element(s) not in the open interval (0, max_payoff), where max_payoff = %f is twice the value of the game.' % self.max_payoff)
         if numpy.any(numpy.isclose(initial_payoff_matrix, 0.0)) or numpy.any(numpy.isclose(initial_payoff_matrix, self.max_payoff)):
-            warnings.warn('initial_payoff_matrix has elements close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix has element(s) close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, InitialPayoffMatrixWarning)
             
         self.initial_payoff_matrix = initial_payoff_matrix
         self.initial_offset_matrix = numpy.log(self.max_payoff / initial_payoff_matrix - 1.0)
