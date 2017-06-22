@@ -208,11 +208,12 @@ class NonSymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+    def optimize(self, x0 = None, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
         # Compute the handicaps that balance the game using scipy.optimize.root.
         # check_derivative_epsilon, check_jacobian_epsilon can be used to check the provided row_derivative, col_derivative against a finite difference approximation.
         #     A value of None uses a default value.
         # *args, **kwargs are passed to using scipy.optimize.root.
+        #     In particular you may want to consider changing the solver method if the default is not producing good results.
         
         # Returns the result of scipy.optimize.root, with the following additional values:
         #     result.row_handicaps: The solved row handicaps.
@@ -231,7 +232,8 @@ class NonSymmetricBalance(Balance):
                 self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)   
         
-        x0 = numpy.zeros((self.x_count))
+        if x0 is None:
+            x0 = numpy.zeros((self.x_count))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.row_handicaps = result.x[:self.row_count]
         result.col_handicaps = result.x[-self.col_count:]
@@ -268,8 +270,8 @@ class SymmetricBalance(Balance):
         # Evaluate F in terms of the variables, namely the shared handicap variable vector. This uses the fact that the matrix is skew-symmetric.
         F = numpy.zeros((self.x_count, self.x_count))
         
-        for row_index in range(self.x_count-1):
-            for col_index in range(row_index+1, self.x_count):
+        for row_index in range(self.x_count - 1):
+            for col_index in range(row_index + 1, self.x_count):
                 payoff = self.handicap_function(row_index, col_index, x[row_index], x[col_index])
                 F[row_index, col_index] = payoff
                 F[col_index, row_index] = -payoff
@@ -304,11 +306,12 @@ class SymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+    def optimize(self, x0 = None, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
         # Compute the handicaps that balance the game using scipy.optimize.root.
         # check_derivative_epsilon, check_jacobian_epsilon can be used to check the provided row_derivative, col_derivative against a finite difference approximation.
         #     A value of None uses a default value.
         # *args, **kwargs are passed to using scipy.optimize.root.
+        #     In particular you may want to consider changing the solver method if the default is not producing good results.
         
         # Returns the result of scipy.optimize.root, with the following additional values:
         #     result.handicaps: The solved handicaps.
@@ -327,7 +330,8 @@ class SymmetricBalance(Balance):
                 self.check_jacobian(x, epsilon = check_jacobian_epsilon)
             return self.objective(x)      
             
-        x0 = numpy.zeros((self.x_count))
+        if x0 is None:
+            x0 = numpy.zeros((self.x_count))
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         result.handicaps = result.x
         result.F = self.evaluate_Fx(result.x)
@@ -339,7 +343,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
     
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, value = 1.0):
         # initial_payoff_matrix: Should be nonnegative.
-        # value: Should be strictly positive.
+        # value: Should be strictly positive. Note that the default is 1.0.
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
