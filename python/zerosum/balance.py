@@ -252,6 +252,7 @@ class SymmetricBalance(Balance):
         #     NOTE: In this symmetric case the function should also have the property that 
         #     handicap_function(row_index, col_index, row_handicap, col_handicap) = -handicap_function(col_index, row_index, col_handicap, row_handicap)
         #     This means that for any setting of the handicaps the payoff matrix is skew-symmetric.
+        #     In particular, all diagonal elements should be equal to 0.
         # strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
         #     If only an integer is specified, a uniform distribution will be used.
         # row_derivative: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
@@ -381,7 +382,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
     def __init__(self, initial_payoff_matrix, strategy_weights = None):
         # initial_payoff_matrix 
         #     The elements of initial_payoff_matrix must be in (0, max_payoff), where max_payoff is twice the value of the game.
-        #     The initial_payoff_matrix minus the value of the game should be skew-symmetric.
+        #     The initial_payoff_matrix should be skew-symmetric plus a constant offset (namely the value of the game).
         #     In particular, all diagonal elements should be equal to the value of the game.
         if strategy_weights is None: strategy_weights = initial_payoff_matrix.shape[0]
         SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative)
@@ -392,7 +393,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         # Check skew-symmetry. 
         initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
         if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) is not skew-symmetric.' % (0.5 * self.max_payoff), ValueWarning)
+            warnings.warn('initial_payoff_matrix is not skew-symmetric plus a constant offset.', ValueWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
