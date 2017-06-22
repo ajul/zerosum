@@ -4,14 +4,14 @@ import warnings
 
 def _process_weights(arg):
     try:
-        count = arg.size
-        weights = arg
+        weights = arg.copy()
+        count = weights.size
     except:
+        weights = numpy.ones((arg)) / arg
         count = arg
-        weights = numpy.ones((arg)) / count
     
     # Replace zeros with ones for purposes of weighting the objective vector.
-    objective_weights = weights
+    objective_weights = weights.copy()
     objective_weights[objective_weights == 0.0] = 1.0
     
     return count, weights, objective_weights
@@ -19,7 +19,7 @@ def _process_weights(arg):
 class DerivativeWarning(RuntimeWarning):
     pass
     
-class InitialPayoffMatrixWarning(RuntimeWarning):
+class ValueWarning(RuntimeWarning):
     pass
     
 class Balance():
@@ -133,7 +133,7 @@ class Balance():
         return result
 
 class NonSymmetricBalance(Balance):
-    def __init__(self, handicap_function, row_weights, col_weights, row_derivative = None, col_derivative = None):
+    def __init__(self, handicap_function, row_weights, col_weights, row_derivative = None, col_derivative = None, value = 0.0):
         # handicap_function: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
         #     and produces the (row_index, col_index) element of the payoff matrix. 
         #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically increasing in col_derivative for every element. 
@@ -141,6 +141,7 @@ class NonSymmetricBalance(Balance):
         #     If only an integer is specified, a uniform distribution will be used.
         # row_derivative, col_derivative: Functions that take the arguments row_index, col_index, row_handicap, col_handicap 
         #     and produce the derviative of the (row_index, col_index) element of the payoff matrix with respect to the row or column handicap.
+        # value: The desired value of the resulting game. This is equal to the row player's payoff and the negative of the column player's payoff.
         self.handicap_function = handicap_function
         
         if (row_derivative is None) != (col_derivative is None):
@@ -152,7 +153,15 @@ class NonSymmetricBalance(Balance):
         self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
         self.col_count, self.col_weights, self.col_objective_weights = _process_weights(col_weights)
         
+        if not numpy.isclose(numpy.sum(row_weights), numpy.sum(col_weights)):
+            warnings.warn('Row and column weights should sum to the same value.', ValueWarning)
+        
         self.x_count = self.row_count + self.col_count
+        
+        if value <= 0.0:
+            warnings.warn('Value %f is non-positive.' % value, ValueWarning)
+        
+        self.value = value
         
     def evaluate_Fx(self, x):
         # Evaluate F in terms of the variables, namely the handicap variable vectors.
@@ -165,8 +174,8 @@ class NonSymmetricBalance(Balance):
         F = self.evaluate_Fx(x)
         
         # Dot products are weighted.
-        row_objectives = numpy.tensordot(F, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
-        col_objectives = -numpy.tensordot(F, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
+        row_objectives = (numpy.tensordot(F, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
+        col_objectives = (self.value - numpy.tensordot(F, self.row_weights, axes = ([0], [0]))) * self.col_objective_weights
         
         return numpy.concatenate((row_objectives, col_objectives))
         
@@ -327,21 +336,21 @@ class SymmetricBalance(Balance):
 class MultiplicativeBalance(NonSymmetricBalance):
     # A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
     # The actual optimization is done using the log of the handicaps.
-    # The value of the resulting game is 1.0.
     
-    def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None):
+    def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, value = 1.0):
         # initial_payoff_matrix: Should be nonnegative.
+        # value: Should be strictly positive.
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
         
         if numpy.any(initial_payoff_matrix < 0.0):
-            warnings.warn('initial_payoff_matrix has negative element(s).', InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix has negative element(s).', ValueWarning)
     
-        NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, row_derivative = self.row_derivative, col_derivative = self.col_derivative)
+        NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, row_derivative = self.row_derivative, col_derivative = self.col_derivative, value = value)
 
     def handicap_function(self, row_index, col_index, row_handicap, col_handicap):
-        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap) - 1.0
+        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
         
     def row_derivative(self, row_index, col_index, row_handicap, col_handicap):
         return -self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
@@ -353,7 +362,6 @@ class MultiplicativeBalance(NonSymmetricBalance):
         # The actual optimization is done over the log of the handicaps.
         # These can be accessed using result.row_log_handicaps, result.col_handicaps.
         result = NonSymmetricBalance.optimize(self, *args, **kwargs)
-        result.F = result.F + 1.0
         result.row_log_handicaps = result.row_handicaps
         result.col_log_handicaps = result.col_handicaps
         result.row_handicaps = numpy.exp(result.row_handicaps)
@@ -378,13 +386,13 @@ class LogisticSymmetricBalance(SymmetricBalance):
         # Check skew-symmetry. 
         initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
         if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) is not skew-symmetric.' % (0.5 * self.max_payoff), InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix minus the value of the game %f (i.e. any diagonal element) is not skew-symmetric.' % (0.5 * self.max_payoff), ValueWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
             raise ValueError('initial_payoff_matrix has element(s) not in the open interval (0, max_payoff), where max_payoff = %f is twice the value of the game.' % self.max_payoff)
         if numpy.any(numpy.isclose(initial_payoff_matrix, 0.0)) or numpy.any(numpy.isclose(initial_payoff_matrix, self.max_payoff)):
-            warnings.warn('initial_payoff_matrix has element(s) close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, InitialPayoffMatrixWarning)
+            warnings.warn('initial_payoff_matrix has element(s) close to 0 and/or max_payoff, where max_payoff = %f is twice the value of the game.' % self.max_payoff, ValueWarning)
             
         self.initial_payoff_matrix = initial_payoff_matrix
         self.initial_offset_matrix = numpy.log(self.max_payoff / initial_payoff_matrix - 1.0)
