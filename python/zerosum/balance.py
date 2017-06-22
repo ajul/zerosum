@@ -327,6 +327,7 @@ class SymmetricBalance(Balance):
 class MultiplicativeBalance(NonSymmetricBalance):
     # A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
     # The actual optimization is done using the log of the handicaps.
+    # The value of the resulting game is 1.0.
     
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None):
         # initial_payoff_matrix: Should be nonnegative.
@@ -352,6 +353,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         # The actual optimization is done over the log of the handicaps.
         # These can be accessed using result.row_log_handicaps, result.col_handicaps.
         result = NonSymmetricBalance.optimize(self, *args, **kwargs)
+        result.F = result.F + 1.0
         result.row_log_handicaps = result.row_handicaps
         result.col_log_handicaps = result.col_handicaps
         result.row_handicaps = numpy.exp(result.row_handicaps)
