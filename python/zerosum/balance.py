@@ -2,6 +2,12 @@ import numpy
 import scipy.optimize
 import warnings
 
+class DerivativeWarning(RuntimeWarning):
+    pass
+    
+class ValueWarning(RuntimeWarning):
+    pass
+
 def _process_weights(arg):
     try:
         weights = arg.copy()
@@ -9,18 +15,22 @@ def _process_weights(arg):
     except:
         weights = numpy.ones((arg)) / arg
         count = arg
+        
+    weight_sum = numpy.sum(weights)
     
-    # Replace zeros with ones for purposes of weighting the objective vector.
+    if weight_sum == 0:
+        raise ValueError('Weights sum to 0.')
+        
+    if numpy.any(weights < 0.0):
+        raise ValueError('Received negative weight(s).')
+        
+    weights = weights / weight_sum
+    
+    # Replace zeros with 1.0 / weights.size for purposes of weighting the objective vector.
     objective_weights = weights.copy()
-    objective_weights[objective_weights == 0.0] = 1.0
+    objective_weights[objective_weights == 0.0] = 1.0 / weights.size
     
     return count, weights, objective_weights
-    
-class DerivativeWarning(RuntimeWarning):
-    pass
-    
-class ValueWarning(RuntimeWarning):
-    pass
     
 class Balance():
     # Base class for balancing.
@@ -139,6 +149,7 @@ class NonSymmetricBalance(Balance):
         #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically increasing in col_derivative for every element. 
         # row_weights, col_weights: Defines the desired Nash equilibrium in terms of row and column strategy probability weights. 
         #     If only an integer is specified, a uniform distribution will be used.
+        #     Weights will be normalized.
         # row_derivative, col_derivative: Functions that take the arguments row_index, col_index, row_handicap, col_handicap 
         #     and produce the derviative of the (row_index, col_index) element of the payoff matrix with respect to the row or column handicap.
         # value: The desired value of the resulting game. This is equal to the row player's payoff and the negative of the column player's payoff.
@@ -152,9 +163,6 @@ class NonSymmetricBalance(Balance):
     
         self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
         self.col_count, self.col_weights, self.col_objective_weights = _process_weights(col_weights)
-        
-        if not numpy.isclose(numpy.sum(row_weights), numpy.sum(col_weights)):
-            warnings.warn('Row and column weights should sum to the same value.', ValueWarning)
         
         self.x_count = self.row_count + self.col_count
         
@@ -365,10 +373,14 @@ class MultiplicativeBalance(NonSymmetricBalance):
     def col_derivative(self, row_index, col_index, row_handicap, col_handicap):
         return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
     
-    def optimize(self, *args, **kwargs):
+    def optimize(self, method = 'lm', options = {}, *args, **kwargs):
         # The actual optimization is done over the log of the handicaps.
         # These can be accessed using result.row_log_handicaps, result.col_handicaps.
-        result = NonSymmetricBalance.optimize(self, *args, **kwargs)
+        
+        # Empirically the 'lm' method seems to converge more reliably than 'hybrd', so we default to that.
+        # Additionally we use a scale factor 1e-3 since the exponential is sensitive to small changes.
+        options = {'factor' : 1e-3}.update(options)
+        result = NonSymmetricBalance.optimize(self, method = method, options = options, *args, **kwargs)
         result.row_log_handicaps = result.row_handicaps
         result.col_log_handicaps = result.col_handicaps
         result.row_handicaps = numpy.exp(result.row_handicaps)
