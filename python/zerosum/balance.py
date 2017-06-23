@@ -378,8 +378,8 @@ class MultiplicativeBalance(NonSymmetricBalance):
         # These can be accessed using result.row_log_handicaps, result.col_handicaps.
         
         # Empirically the 'lm' method seems to converge more reliably than 'hybrd', so we default to that.
-        # Additionally we use a scale factor 1e-3 since the exponential is sensitive to small changes.
-        options = {'factor' : 1e-3}.update(options)
+        # Additionally we default to a smaller than usual step bound factor since the exponential is sensitive to small changes.
+        options = {'factor' : 1.0}.update(options)
         result = NonSymmetricBalance.optimize(self, method = method, options = options, *args, **kwargs)
         result.row_log_handicaps = result.row_handicaps
         result.col_log_handicaps = result.col_handicaps
