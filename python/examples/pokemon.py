@@ -44,7 +44,8 @@ plt.text(uniform_x, -0.203, 'Uniform',
 
 # Scatter plot of handicaps vs. Nash of initial game.
 x = row_nash.strategy
-y = balance.row_log_handicaps - numpy.mean(balance.row_log_handicaps)
+y = numpy.log(balance.row_handicaps)
+y -= numpy.mean(y)
 
 ax.scatter(x, y, s = marker_size, c = colors)
 
@@ -90,7 +91,8 @@ plt.text(uniform_x, -0.203, 'Uniform',
          ha = 'center', va = 'top')
 
 x = col_nash.strategy
-y = balance.col_log_handicaps - numpy.mean(balance.col_log_handicaps)
+y = numpy.log(balance.col_handicaps)
+y -= numpy.mean(y)
 
 ax.scatter(x, y, s = marker_size, c = colors)
 
