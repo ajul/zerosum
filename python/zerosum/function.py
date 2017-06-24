@@ -9,7 +9,7 @@ class Function():
     def derivative(x):
         raise NotImplementedError()
 
-class HarmonicLinearRectifier(Function):
+class ReciprocalLinearRectifier(Function):
     @staticmethod
     def evaluate(x):
         mask = x >= 0.0
@@ -24,3 +24,12 @@ class HarmonicLinearRectifier(Function):
         result = numpy.ones_like(x)
         result[~mask] = 1.0 / (1.0 - x[~mask]) / (1.0 - x[~mask])
         return result
+
+class ExponentialRectifier(Function):
+    @staticmethod
+    def evaluate(x):
+        return numpy.exp(x)
+    
+    @staticmethod
+    def derivative(x):
+        return numpy.exp(x)

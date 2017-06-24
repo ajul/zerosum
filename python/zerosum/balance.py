@@ -234,9 +234,9 @@ class SymmetricBalance(Balance):
         # This version is for symmetric games, where both players are choosing from the same set of strategies.
         # Thus there are no independent inputs for column strategies.
         
-        # handicap_function: A function that takes the arguments row_index, col_index, row_handicap, col_handicap 
-        #     and produces the (row_index, col_index) element of the payoff matrix. 
-        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically increasing in col_derivative for every element. 
+        # handicap_function: A function that takes the arguments row_handicaps, col_handicaps and produces the payoff matrix.
+        #     Each element of the payoff matrix should depend only on the corresponding row and column handicap.
+        #     It is highly desirable that the function be strictly monotonically decreasing in row_handicap and strictly monotonically increasing in col_handicap for every element. 
         #     NOTE: In this symmetric case the function should also have the property that 
         #     handicap_function(row_index, col_index, row_handicap, col_handicap) = -handicap_function(col_index, row_index, col_handicap, row_handicap)
         #     This means that for any setting of the handicaps the payoff matrix is skew-symmetric.
@@ -321,9 +321,12 @@ class MultiplicativeBalance(NonSymmetricBalance):
     # A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
     # The actual optimization is done using the log of the handicaps.
     
-    def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, value = 1.0, rectifier = zerosum.function.HarmonicLinearRectifier):
+    def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, value = 1.0, rectifier = zerosum.function.ReciprocalLinearRectifier):
         # initial_payoff_matrix: Should be nonnegative.
         # value: Should be strictly positive. Note that the default is 1.0.
+        # rectifier: A strictly positive, strictly monotonically increasing function for mapping handicaps in (-inf, inf) to (0, inf).
+        #     While an exponential is appealing from an analytic point of view, it can cause overflows in practice.
+        #     We therefore default to a reciprocal-linear rectifier.
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
@@ -354,13 +357,13 @@ class MultiplicativeBalance(NonSymmetricBalance):
     
     def optimize(self, method = 'lm', *args, **kwargs):
         # The actual optimization is done using handicaps in (-inf, inf) that are rectified before being used.
-        # These can be accessed using result.row_pre_rect_handicaps, result.col_pre_rect_handicaps.
+        # These can be accessed using result.row_handicaps_pre_rectify, result.col_handicaps_pre_rectify.
         
         # We default to method 'lm' since it seems to tend to be more accurate in this case.
         
         result = NonSymmetricBalance.optimize(self, method = method, *args, **kwargs)
-        result.row_pre_rect_handicaps = result.row_handicaps
-        result.col_pre_rect_handicaps = result.col_handicaps
+        result.row_handicaps_pre_rectify = result.row_handicaps
+        result.col_handicaps_pre_rectify = result.col_handicaps
         result.row_handicaps = self.rectifier.evaluate(result.row_handicaps)
         result.col_handicaps = self.rectifier.evaluate(result.col_handicaps)
         return result
