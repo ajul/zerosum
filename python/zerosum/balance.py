@@ -335,6 +335,12 @@ class MultiplicativeBalance(NonSymmetricBalance):
             row_derivative = self.row_derivative, col_derivative = self.col_derivative, 
             value = value)
             
+        if initial_payoff_matrix.shape[0] != self.row_weights.size:
+            raise ValueError('The size of row_weights does not match the row count of initial_payoff_matrix.')
+        
+        if initial_payoff_matrix.shape[1] != self.col_weights.size:
+            raise ValueError('The size of col_weights does not match the column count of initial_payoff_matrix.')
+            
         self.rectifier = rectifier
 
     def handicap_function(self, row_handicaps, col_handicaps):

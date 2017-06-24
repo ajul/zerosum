@@ -35,6 +35,13 @@ class TestMultiplicativeBalance(unittest.TestCase):
         data = -numpy.ones((2, 2))
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'initial_payoff_matrix.*negative'):
             zerosum.balance.MultiplicativeBalance(data)
+             
+    def test_weight_count(self):
+        data = numpy.ones((2, 2))
+        with self.assertRaisesRegex(ValueError, 'size of row_weights'):
+            zerosum.balance.MultiplicativeBalance(data, numpy.ones((3,)), numpy.ones((2,)))
+        with self.assertRaisesRegex(ValueError, 'size of col_weights'):
+            zerosum.balance.MultiplicativeBalance(data, numpy.ones((2,)), numpy.ones((3,)))
         
     def test_random_unweighted(self):
         for i in range(num_random_trials):
