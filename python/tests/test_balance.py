@@ -3,7 +3,7 @@ import unittest
 import warnings
 import zerosum.balance
 
-strategy_count = 8
+strategy_count = 16
 solver_tol = 1e-7
 solution_atol = 1e-6
 num_random_trials = 100
@@ -63,10 +63,27 @@ class TestMultiplicativeBalance(unittest.TestCase):
             numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), self.value, atol = solution_atol)
 
 class TestLogisticSymmetricBalance(unittest.TestCase):
+    def random_data(self, n):
+        data = numpy.random.random((n, n))
+        data_nt = 1.0 - data
+        data = 0.5 * (data + data_nt)
+        return data
+
     def test_non_skew_symmetric(self):
         data = numpy.eye(2) + 0.5
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'skew-symmetric'):
             zerosum.balance.LogisticSymmetricBalance(data)
+            
+    def test_nonsquare(self):
+        data = numpy.ones((2, 3))
+        with self.assertRaisesRegex(ValueError, 'square'):
+            zerosum.balance.LogisticSymmetricBalance(data)
+            
+    def test_weight_count(self):
+        data = self.random_data(2)
+        strategy_weights = numpy.ones((3,))
+        with self.assertRaisesRegex(ValueError, 'size of strategy_weights'):
+            zerosum.balance.LogisticSymmetricBalance(data, strategy_weights)
             
     def test_saturation(self):
         data = numpy.array([[0.5, 1.0], 
@@ -83,9 +100,7 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
     
     def test_random_unweighted(self):
         for i in range(num_random_trials):
-            data = numpy.random.random((strategy_count, strategy_count))
-            data_nt = 1.0 - data
-            data = 0.5 * (data + data_nt)
+            data = self.random_data(strategy_count)
             result = zerosum.balance.LogisticSymmetricBalance(data).optimize(tol = solver_tol)
             numpy.testing.assert_allclose(numpy.average(result.F, axis = 0), 0.5, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, axis = 1), 0.5, atol = solution_atol)
@@ -93,9 +108,7 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
     def test_random_weighted(self):
         for i in range(num_random_trials):
             strategy_weights = random_weights(strategy_count)
-            data = numpy.random.random((strategy_count, strategy_count))
-            data_nt = 1.0 - data
-            data = 0.5 * (data + data_nt)
+            data = self.random_data(strategy_count)
             result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(tol = solver_tol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 0), 0.5, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 1), 0.5, atol = solution_atol)
@@ -103,7 +116,7 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
     def test_random_weighted_with_zeros(self):
         for i in range(num_random_trials):
             strategy_weights = random_weights_with_zeros(strategy_count)
-            data = numpy.random.random((strategy_count * 2, strategy_count * 2))
+            data = numpy.random.random((strategy_count, strategy_count))
             data_nt = 1.0 - data
             data = 0.5 * (data + data_nt)
             result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(tol = solver_tol)
