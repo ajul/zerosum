@@ -10,9 +10,9 @@ import zerosum.nash
 # Produces a .csv file for the initial game and the resulting game.
 
 init = dataset.matchup.ssf2t.sorted_by_sum()
-dataset.csv.write_csv('out/ssf2t_init.csv', init.data, init.names)
+dataset.csv.write_csv('out/ssf2t_init.csv', init.data, init.names, numeric_format = '%0.4f')
 
 balance = zerosum.balance.LogisticSymmetricBalance(init.data)
 opt = balance.optimize()
-dataset.csv.write_csv('out/ssf2t_opt.csv', opt.F, init.names)
+dataset.csv.write_csv('out/ssf2t_opt.csv', opt.F, init.names, numeric_format = '%0.4f')
 
