@@ -1,30 +1,26 @@
 import numpy
 
 class Function():
-    @classmethod
+    @staticmethod
     def evaluate(x):
         raise NotImplementedError()
     
-    @classmethod
-    def inverse(x):
-        raise NotImplementedError()
-    
-    @classmethod
+    @staticmethod
     def derivative(x):
         raise NotImplementedError()
 
 class HarmonicLinearRectifier(Function):
-    @classmethod
+    @staticmethod
     def evaluate(x):
-        if x >= 0.0: return x + 1.0
-        else: return 1.0 / (1.0 - x)
+        mask = x >= 0.0
+        result = numpy.zeros_like(x)
+        result[mask] = x[mask] + 1.0
+        result[~mask] = 1.0 / (1.0 - x[~mask])
+        return result
     
-    @classmethod
-    def inverse(x):
-        if x >= 1.0: return x - 1.0
-        else: return 1.0 - 1.0 / x
-    
-    @classmethod
+    @staticmethod
     def derivative(x):
-        if x >= 0.0: return 1.0
-        else: return 1.0 / (1.0 - x) / (1.0 - x)
+        mask = x >= 0.0
+        result = numpy.ones_like(x)
+        result[~mask] = 1.0 / (1.0 - x[~mask]) / (1.0 - x[~mask])
+        return result

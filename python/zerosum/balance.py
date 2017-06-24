@@ -1,3 +1,4 @@
+from zerosum.function import HarmonicLinearRectifier as HLR
 import numpy
 import scipy.optimize
 import warnings
@@ -337,7 +338,7 @@ class SymmetricBalance(Balance):
                 self.check_col_derivative(x, epsilon = check_derivative_epsilon)
             if check_jacobian_epsilon is not False: 
                 self.check_jacobian(x, epsilon = check_jacobian_epsilon)
-            return self.objective(x)      
+            return self.objective(x)
             
         if x0 is None:
             x0 = numpy.zeros((self.x_count))
@@ -365,26 +366,25 @@ class MultiplicativeBalance(NonSymmetricBalance):
             value = value)
 
     def handicap_function(self, row_index, col_index, row_handicap, col_handicap):
-        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
+        return self.initial_payoff_matrix[row_index, col_index] * HLR.evaluate(col_handicap) * HLR.evaluate(-row_handicap)
         
     def row_derivative(self, row_index, col_index, row_handicap, col_handicap):
-        return -self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
+        return self.initial_payoff_matrix[row_index, col_index] * HLR.evaluate(col_handicap) * -HLR.derivative(-row_handicap)
         
     def col_derivative(self, row_index, col_index, row_handicap, col_handicap):
-        return self.initial_payoff_matrix[row_index, col_index] * numpy.exp(col_handicap - row_handicap)
+        return self.initial_payoff_matrix[row_index, col_index] * HLR.derivative(col_handicap) * HLR.evaluate(-row_handicap)
     
-    def optimize(self, method = 'lm', options = {}, *args, **kwargs):
-        # The actual optimization is done over the log of the handicaps.
-        # These can be accessed using result.row_log_handicaps, result.col_handicaps.
+    def optimize(self, method = 'lm', *args, **kwargs):
+        # The actual optimization is done using handicaps in (-inf, inf) that are rectified before being used.
+        # These can be accessed using result.row_pre_rect_handicaps, result.col_pre_rect_handicaps.
         
-        # Empirically the 'lm' method seems to converge more reliably than 'hybrd', so we default to that.
-        # Additionally we default to a smaller than usual step bound factor since the exponential is sensitive to small changes.
-        options = {'factor' : 1.0}.update(options)
-        result = NonSymmetricBalance.optimize(self, method = method, options = options, *args, **kwargs)
-        result.row_log_handicaps = result.row_handicaps
-        result.col_log_handicaps = result.col_handicaps
-        result.row_handicaps = numpy.exp(result.row_handicaps)
-        result.col_handicaps = numpy.exp(result.col_handicaps)
+        # We default to method 'lm' since it seems to tend to be more accurate in this case.
+        
+        result = NonSymmetricBalance.optimize(self, method = method, *args, **kwargs)
+        result.row_pre_rect_handicaps = result.row_handicaps
+        result.col_pre_rect_handicaps = result.col_handicaps
+        result.row_handicaps = HLR.evaluate(result.row_handicaps)
+        result.col_handicaps = HLR.evaluate(result.col_handicaps)
         return result
     
 class LogisticSymmetricBalance(SymmetricBalance):
