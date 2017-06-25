@@ -82,7 +82,7 @@ class Balance():
         row_handicaps_N = x[:self.row_count] - epsilon * 0.5
         row_handicaps_P = x[:self.row_count] + epsilon * 0.5
         col_handicaps = x[-self.col_count:]
-        return (self.evaluate_F(row_handicaps_P, col_handicaps) - self.evaluate_F(row_handicaps_N, col_handicaps)) / epsilon
+        return (self.handicap_function(row_handicaps_P, col_handicaps) - self.handicap_function(row_handicaps_N, col_handicaps)) / epsilon
         
     def col_derivative_x_fd(self, x, epsilon = None):
         # Computes a finite (central) difference approximation of derivative of the handicap function with respect to the corresponding column handicap.
@@ -90,7 +90,7 @@ class Balance():
         row_handicaps = x[:self.row_count]
         col_handicaps_N = x[-self.col_count:] - epsilon * 0.5
         col_handicaps_P = x[-self.col_count:] + epsilon * 0.5
-        return (self.evaluate_F(row_handicaps, col_handicaps_P) - self.evaluate_F(row_handicaps, col_handicaps_N)) / epsilon
+        return (self.handicap_function(row_handicaps, col_handicaps_P) - self.handicap_function(row_handicaps, col_handicaps_N)) / epsilon
         
     def check_row_derivative(self, x = None, epsilon = None):
         # Checks the derivative of the handicap function with respect to the corresponding row handicap against a finite difference approximation.

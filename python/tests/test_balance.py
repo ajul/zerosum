@@ -42,6 +42,16 @@ class TestMultiplicativeBalance(unittest.TestCase):
             zerosum.balance.MultiplicativeBalance(data, numpy.ones((3,)), numpy.ones((2,)))
         with self.assertRaisesRegex(ValueError, 'size of col_weights'):
             zerosum.balance.MultiplicativeBalance(data, numpy.ones((2,)), numpy.ones((3,)))
+            
+    def test_check_derivative(self):
+        print()
+        data = numpy.random.random((strategy_count, strategy_count))
+        result = zerosum.balance.MultiplicativeBalance(data).optimize(check_derivative_epsilon = None)
+        
+    def test_check_jacobian(self):
+        print()
+        data = numpy.random.random((strategy_count, strategy_count))
+        result = zerosum.balance.MultiplicativeBalance(data).optimize(check_jacobian_epsilon = None)
         
     def test_random_unweighted(self):
         for i in range(num_random_trials):
@@ -104,6 +114,16 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
                             [epsilon, 0.5]])
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'close to'):
             zerosum.balance.LogisticSymmetricBalance(data)
+    
+    def test_check_derivative(self):
+        print()
+        data = self.random_data(strategy_count)
+        result = zerosum.balance.LogisticSymmetricBalance(data).optimize(check_derivative_epsilon = None)
+        
+    def test_check_jacobian(self):
+        print()
+        data = self.random_data(strategy_count)
+        result = zerosum.balance.LogisticSymmetricBalance(data).optimize(check_jacobian_epsilon = None)
     
     def test_random_unweighted(self):
         for i in range(num_random_trials):
