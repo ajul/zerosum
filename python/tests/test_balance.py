@@ -36,7 +36,7 @@ class TestMultiplicativeBalance(unittest.TestCase):
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'initial_payoff_matrix.*negative'):
             zerosum.balance.MultiplicativeBalance(data)
              
-    def test_weight_count(self):
+    def test_weight_count_error(self):
         data = numpy.ones((2, 2))
         with self.assertRaisesRegex(ValueError, 'size of row_weights'):
             zerosum.balance.MultiplicativeBalance(data, numpy.ones((3,)), numpy.ones((2,)))
@@ -86,29 +86,29 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
         data = 0.5 * (data + data_nt)
         return data
 
-    def test_non_skew_symmetric(self):
+    def test_non_skew_symmetric_warning(self):
         data = numpy.eye(2) + 0.5
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'skew-symmetric'):
             zerosum.balance.LogisticSymmetricBalance(data)
             
-    def test_nonsquare(self):
+    def test_nonsquare_error(self):
         data = numpy.ones((2, 3))
         with self.assertRaisesRegex(ValueError, 'square'):
             zerosum.balance.LogisticSymmetricBalance(data)
             
-    def test_weight_count(self):
+    def test_weight_count_error(self):
         data = self.random_data(2)
         strategy_weights = numpy.ones((3,))
         with self.assertRaisesRegex(ValueError, 'size of strategy_weights'):
             zerosum.balance.LogisticSymmetricBalance(data, strategy_weights)
             
-    def test_saturation(self):
+    def test_saturation_error(self):
         data = numpy.array([[0.5, 1.0], 
                             [0.0, 0.5]])
         with self.assertRaisesRegex(ValueError, 'open interval'):
             zerosum.balance.LogisticSymmetricBalance(data)
             
-    def test_near_saturation(self):
+    def test_near_saturation_warning(self):
         epsilon = 1e-12
         data = numpy.array([[0.5, 1.0 - epsilon], 
                             [epsilon, 0.5]])
