@@ -129,6 +129,3 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
             result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(tol = solver_tol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 0), 0.5, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 1), 0.5, atol = solution_atol)
-    
-if __name__ == '__main__':
-    unittest.main()
