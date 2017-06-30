@@ -30,7 +30,6 @@ class TestWeights(unittest.TestCase):
             zerosum.balance._process_weights(weights)
 
 class TestMultiplicativeBalance(unittest.TestCase):
-    value = 1.0
     def test_negative_matrix_warning(self):
         data = -numpy.ones((2, 2))
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'initial_payoff_matrix.*negative'):
@@ -55,29 +54,32 @@ class TestMultiplicativeBalance(unittest.TestCase):
         
     def test_random_unweighted(self):
         for i in range(num_random_trials):
+            value = numpy.random.rand() + 1.0
             data = numpy.random.random((strategy_count, strategy_count))
-            result = zerosum.balance.MultiplicativeBalance(data, value = self.value).optimize(tol = solver_tol)
-            numpy.testing.assert_allclose(numpy.average(result.F, axis = 0), self.value, atol = solution_atol)
-            numpy.testing.assert_allclose(numpy.average(result.F, axis = 1), self.value, atol = solution_atol)
+            result = zerosum.balance.MultiplicativeBalance(data, value = value).optimize(tol = solver_tol)
+            numpy.testing.assert_allclose(numpy.average(result.F, axis = 0), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.F, axis = 1), value, atol = solution_atol)
         
     def test_random_weighted(self):
         for i in range(num_random_trials):
+            value = numpy.random.rand() + 1.0
             row_weights = random_weights(strategy_count)
             col_weights = random_weights(strategy_count + 1)
             data = numpy.random.random((strategy_count, strategy_count + 1))
-            result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = self.value).optimize(tol = solver_tol)
+            result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(tol = solver_tol)
 
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), self.value, atol = solution_atol)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), self.value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
         
     def test_random_weighted_with_zeros(self):
         for i in range(num_random_trials):
+            value = numpy.random.rand() + 1.0
             row_weights = random_weights_with_zeros(strategy_count)
             col_weights = random_weights_with_zeros(strategy_count + 1)
             data = numpy.random.random((strategy_count, strategy_count +1))
-            result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = self.value).optimize(tol = solver_tol)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), self.value, atol = solution_atol)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), self.value, atol = solution_atol)
+            result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(tol = solver_tol)
+            numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
 
 class TestLogisticSymmetricBalance(unittest.TestCase):
     def random_data(self, n):
