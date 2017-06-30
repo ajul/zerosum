@@ -34,13 +34,25 @@ class VectorFunction():
     
     def jacobian(self, x):
         raise NotImplementedError()
-
-class L1Norm(VectorFunction):
+        
+class Scale(VectorFunction):
+    """ Scales the input vector elementwise by a given scalar or vector. """
     def __init__(self, scale = 1.0):
         self.scale = scale
 
     def evaluate(self, x):
-        return self.scale * numpy.sum(x)
+        return self.scale * x
+        
+    def jacobian(self, x):
+        return self.scale * numpy.eye(x.size)
+
+class Sum(VectorFunction):
+    """ Sums the input vector multiplied with a given scalar or weight vector. """
+    def __init__(self, scale = 1.0):
+        self.scale = scale
+
+    def evaluate(self, x):
+        return numpy.sum(self.scale * x)
         
     def jacobian(self, x):
         return self.scale * numpy.ones((1, x.size))
