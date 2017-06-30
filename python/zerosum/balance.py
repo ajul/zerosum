@@ -10,6 +10,24 @@ class ValueWarning(RuntimeWarning):
     pass
 
 def _process_weights(arg):
+    """ 
+    Helper function for processing weight arguments.
+    
+    Args:
+        arg: Either:
+            An integer, in which case the weights will be uniform over that many strategies.
+            A weight distribution, which will be normalized to sum to 1.
+            
+    Returns:
+        count: The number of weights/strategies.
+        weights: The (normalized) weights.
+        objective_weights: As weights, but 0-weights are replaced by 1.
+            Used for weighting the objective function.
+            
+    Raises:
+        ValueError: If weights sum to 0, or any of the weights are negative.
+    
+    """
     try:
         weights = arg.copy()
         count = weights.size
@@ -34,7 +52,9 @@ def _process_weights(arg):
     return count, weights, objective_weights
     
 class Balance():
-    # Base class for balancing.
+    """ 
+    Base class for balancing. Not intended to be used directly.
+    """
     def jacobian_fd(self, epsilon = None):
         """ Computes a finite (central) difference approximation of the Jacobian. """
         if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
@@ -145,6 +165,10 @@ class Balance():
         return result
 
 class NonSymmetricBalance(Balance):
+    """
+    This version of Balance for non-symmetric games, where each player is choosing
+    from an independent set of strategies.
+    """
     def __init__(self, handicap_function, row_weights, col_weights, 
         row_derivative = None, col_derivative = None, value = 0.0):
         """
@@ -279,7 +303,8 @@ class NonSymmetricBalance(Balance):
 class SymmetricBalance(Balance):
     def __init__(self, handicap_function, strategy_weights, row_derivative = None):
         """
-        This version is for symmetric games, where both players are choosing from the same set of strategies.
+        This version of Balance for symmetric games, 
+        where both players are choosing from the same set of strategies.
         Thus there are no independent inputs for column strategies.
         
         Args:
