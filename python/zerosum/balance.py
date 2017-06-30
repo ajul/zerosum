@@ -264,10 +264,10 @@ class NonSymmetricBalance(Balance):
         
         Args:
             x0: Starting point of the optimization. Defaults to a zero vector.
-            check_derivative, check_jacobian: 
+            check_derivative, check_jacobian:
                 Can be used to check the provided row_derivative, col_derivative 
-                against a finite difference approximation.
-                A value of True uses a default value for the finite-difference epsilon.
+                against a finite difference approximation with the provided epsilon.
+                A value of True uses a default value for epsilon.
             *args, **kwargs: Passed to scipy.optimize.root.
                 In particular you may want to consider changing the solver method 
                 if the default is not producing good results.
@@ -386,9 +386,10 @@ class SymmetricBalance(Balance):
         Compute the handicaps that balance the game using scipy.optimize.root.
         
         Args:
-            check_derivative, check_jacobian can be used to check the provided row_derivative, col_derivative 
-                against a finite difference approximation.
-                A value of True uses a default value for the finite-difference epsilon.
+            check_derivative, check_jacobian:
+                Can be used to check the provided row_derivative, col_derivative 
+                against a finite difference approximation with the provided epsilon.
+                A value of True uses a default value for epsilon.
             *args, **kwargs: Passed to scipy.optimize.root.
                 In particular you may want to consider changing the solver method if the default is not producing good results.
         
