@@ -301,7 +301,7 @@ class NonSymmetricBalance(Balance):
         return result
 
 class SymmetricBalance(Balance):
-    def __init__(self, handicap_function, strategy_weights, row_derivative = None):
+    def __init__(self, handicap_function, strategy_weights, row_derivative = None, value = None):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
@@ -314,16 +314,19 @@ class SymmetricBalance(Balance):
                 It is highly desirable that the function be strictly monotonically decreasing 
                 in row_handicap and strictly monotonically increasing in col_handicap for every element. 
                 NOTE: In this symmetric case the function should also have the property that 
-                handicap_function(row_index, col_index, row_handicap, col_handicap) = -handicap_function(col_index, row_index, col_handicap, row_handicap)
-                This means that for any setting of the handicaps the payoff matrix is skew-symmetric.
-                In particular, all diagonal elements should be equal to 0.
+                handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
+                where the value of the game is constant.
+                This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
+                In particular, all diagonal elements should be equal to the value of the game.
             strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
             row_derivative: A function that takes the arguments row_handicaps, col_handicaps
-                and produces the derviative of the (row_index, col_index) element of the payoff matrix 
-                with respect to the row handicap.
+                and produces the derviative of the payoff matrix with respect to the row handicaps.
                 The skew-symmetry property means that the column derivative is 
                 the negative of the row derivative with the players interchanged.
+            value: Value of the game. 
+                If not supplied it will be set automatically based on the diagonal elements
+                when the payoff matrix is first evaluated.
         """
         self.x_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.x_count
@@ -333,9 +336,18 @@ class SymmetricBalance(Balance):
             self.row_derivative = row_derivative
             # Using the skew-symmetric property.
             self.col_derivative = lambda row_handicaps, col_handicaps: -row_derivative(row_handicaps, col_handicaps)
+            
+        self.value = value
    
     def evaluate_payoff_matrix(self, x):
-        return self.handicap_function(x, x)
+        """
+        Evaluates the payoff matrix by calling handicap_function.
+        Also sets self.value if not already set.
+        """
+        result = self.handicap_function(x, x)
+        if self.value is None:
+            self.value = numpy.average(numpy.diag(result), weights = self.strategy_weights)
+        return result
         
     def objective(self, x):
         """
@@ -348,7 +360,7 @@ class SymmetricBalance(Balance):
         F = self.evaluate_payoff_matrix(x)
         
         # Dot products are weighted .
-        objectives = numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
+        objectives = numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights - self.value
         
         return objectives
         
@@ -460,7 +472,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         
         Args:
             method: Used by scipy.optimize.root. 
-                For this case we default to method 'lm' since it seems to tend to be more accurate in this case.
+                For this case we default to method 'lm' since it seems to produce more accurate results.
         
         Returns:
             The result of scipy.optimize.root, as with NonSymmetricBalance.
@@ -504,7 +516,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         if initial_payoff_matrix.shape[0] != initial_payoff_matrix.shape[1]:
             raise ValueError('initial_payoff_matrix is not square.')
         
-        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative)
+        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative, value = 0.0)
         
         if initial_payoff_matrix.shape[0] != self.strategy_weights.size:
             raise ValueError('The size of strategy_weights does not match the dimensions of initial_payoff_matrix.')
@@ -531,8 +543,8 @@ class LogisticSymmetricBalance(SymmetricBalance):
         return 1.0 / (1.0 + numpy.exp(row_handicaps[:, None] - col_handicaps[None, :] + self.initial_offset_matrix)) - 0.5
         
     def row_derivative(self, row_handicaps, col_handicaps):
-        normalized_payoffs = self.handicap_function(row_handicaps, col_handicaps)
-        return normalized_payoffs * normalized_payoffs - 0.25
+        payoffs = self.handicap_function(row_handicaps, col_handicaps)
+        return payoffs * payoffs - 0.25
         
     def optimize(self, *args, **kwargs):
         """
