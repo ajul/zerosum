@@ -426,7 +426,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
     """
     
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, 
-        value = 1.0, rectifier = zerosum.function.ReciprocalLinearRectifier):
+        value = 1.0, rectifier = zerosum.function.ReciprocalLinearRectifier()):
         """
         Args:
             initial_payoff_matrix: Should be nonnegative.
