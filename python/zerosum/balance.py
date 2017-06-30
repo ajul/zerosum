@@ -359,8 +359,8 @@ class SymmetricBalance(Balance):
         
         F = self.evaluate_payoff_matrix(x)
         
-        # Dot products are weighted .
-        objectives = numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights - self.value
+        # Dot products are weighted.
+        objectives = (numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
         
         return objectives
         
@@ -516,7 +516,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         if initial_payoff_matrix.shape[0] != initial_payoff_matrix.shape[1]:
             raise ValueError('initial_payoff_matrix is not square.')
         
-        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative, value = 0.0)
+        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative)
         
         if initial_payoff_matrix.shape[0] != self.strategy_weights.size:
             raise ValueError('The size of strategy_weights does not match the dimensions of initial_payoff_matrix.')
