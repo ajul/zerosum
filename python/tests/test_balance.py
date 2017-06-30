@@ -44,13 +44,19 @@ class TestMultiplicativeBalance(unittest.TestCase):
             
     def test_check_derivative(self):
         print()
-        data = numpy.random.random((strategy_count, strategy_count))
-        result = zerosum.balance.MultiplicativeBalance(data).optimize(check_derivative_epsilon = None)
+        value = numpy.random.rand() + 1.0
+        row_weights = random_weights_with_zeros(strategy_count)
+        col_weights = random_weights_with_zeros(strategy_count + 1)
+        data = numpy.random.random((strategy_count, strategy_count +1))
+        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_derivative_epsilon = None)
         
     def test_check_jacobian(self):
         print()
-        data = numpy.random.random((strategy_count, strategy_count))
-        result = zerosum.balance.MultiplicativeBalance(data).optimize(check_jacobian_epsilon = None)
+        value = numpy.random.rand() + 1.0
+        row_weights = random_weights_with_zeros(strategy_count)
+        col_weights = random_weights_with_zeros(strategy_count + 1)
+        data = numpy.random.random((strategy_count, strategy_count +1))
+        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_jacobian_epsilon = None)
         
     def test_random_unweighted(self):
         for i in range(num_random_trials):
@@ -120,12 +126,14 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
     def test_check_derivative(self):
         print()
         data = self.random_data(strategy_count)
-        result = zerosum.balance.LogisticSymmetricBalance(data).optimize(check_derivative_epsilon = None)
+        strategy_weights = random_weights(strategy_count)
+        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_derivative_epsilon = None)
         
     def test_check_jacobian(self):
         print()
         data = self.random_data(strategy_count)
-        result = zerosum.balance.LogisticSymmetricBalance(data).optimize(check_jacobian_epsilon = None)
+        strategy_weights = random_weights(strategy_count)
+        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_jacobian_epsilon = None)
     
     def test_random_unweighted(self):
         for i in range(num_random_trials):
