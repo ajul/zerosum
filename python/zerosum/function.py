@@ -52,7 +52,7 @@ class Sum(VectorFunction):
         self.scale = scale
 
     def evaluate(self, x):
-        return numpy.sum(self.scale * x)
+        return numpy.sum(self.scale * x, keepdims = True)
         
     def jacobian(self, x):
         return self.scale * numpy.ones((1, x.size))
