@@ -48,7 +48,7 @@ class TestMultiplicativeBalance(unittest.TestCase):
         row_weights = random_weights_with_zeros(strategy_count)
         col_weights = random_weights_with_zeros(strategy_count + 1)
         data = numpy.random.random((strategy_count, strategy_count +1))
-        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_derivative_epsilon = None)
+        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_derivative = True)
         
     def test_check_jacobian(self):
         print()
@@ -56,7 +56,7 @@ class TestMultiplicativeBalance(unittest.TestCase):
         row_weights = random_weights_with_zeros(strategy_count)
         col_weights = random_weights_with_zeros(strategy_count + 1)
         data = numpy.random.random((strategy_count, strategy_count +1))
-        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_jacobian_epsilon = None)
+        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(check_jacobian = True)
         
     def test_random_unweighted(self):
         for i in range(num_random_trials):
@@ -127,13 +127,13 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
         print()
         data = self.random_data(strategy_count)
         strategy_weights = random_weights(strategy_count)
-        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_derivative_epsilon = None)
+        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_derivative = True)
         
     def test_check_jacobian(self):
         print()
         data = self.random_data(strategy_count)
         strategy_weights = random_weights(strategy_count)
-        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_jacobian_epsilon = None)
+        result = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights).optimize(check_jacobian = True)
     
     def test_random_unweighted(self):
         for i in range(num_random_trials):

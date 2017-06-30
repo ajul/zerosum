@@ -57,7 +57,7 @@ class Balance():
     """
     def jacobian_fd(self, epsilon = None):
         """ Computes a finite (central) difference approximation of the Jacobian. """
-        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        if epsilon in [None, True]: epsilon = numpy.sqrt(numpy.finfo(float).eps)
         def result(x):
             J = numpy.zeros((self.x_count, self.x_count))
             
@@ -111,7 +111,7 @@ class Balance():
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding row handicap. 
         """
-        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        if epsilon in [None, True]: epsilon = numpy.sqrt(numpy.finfo(float).eps)
         row_handicaps_N = x[:self.row_count] - epsilon * 0.5
         row_handicaps_P = x[:self.row_count] + epsilon * 0.5
         col_handicaps = x[-self.col_count:]
@@ -122,7 +122,7 @@ class Balance():
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding column handicap. 
         """
-        if epsilon is None: epsilon = numpy.sqrt(numpy.finfo(float).eps)
+        if epsilon in [None, True]: epsilon = numpy.sqrt(numpy.finfo(float).eps)
         row_handicaps = x[:self.row_count]
         col_handicaps_N = x[-self.col_count:] - epsilon * 0.5
         col_handicaps_P = x[-self.col_count:] + epsilon * 0.5
@@ -258,16 +258,16 @@ class NonSymmetricBalance(Balance):
         return J
         
     def optimize(self, x0 = None, 
-        check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+        check_derivative = False, check_jacobian = False, *args, **kwargs):
         """
         Compute the handicaps that balance the game using scipy.optimize.root.
         
         Args:
             x0: Starting point of the optimization. Defaults to a zero vector.
-            check_derivative_epsilon, check_jacobian_epsilon: 
-                can be used to check the provided row_derivative, col_derivative 
+            check_derivative, check_jacobian: 
+                Can be used to check the provided row_derivative, col_derivative 
                 against a finite difference approximation.
-                A value of None uses a default value.
+                A value of True uses a default value for the finite-difference epsilon.
             *args, **kwargs: Passed to scipy.optimize.root.
                 In particular you may want to consider changing the solver method 
                 if the default is not producing good results.
@@ -284,11 +284,11 @@ class NonSymmetricBalance(Balance):
             jac = self.jacobian
             
         def fun(x):
-            if check_derivative_epsilon is not False:
-                self.check_row_derivative(x, epsilon = check_derivative_epsilon)
-                self.check_col_derivative(x, epsilon = check_derivative_epsilon)
-            if check_jacobian_epsilon is not False: 
-                self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            if check_derivative is not False:
+                self.check_row_derivative(x, epsilon = check_derivative)
+                self.check_col_derivative(x, epsilon = check_derivative)
+            if check_jacobian is not False: 
+                self.check_jacobian(x, epsilon = check_jacobian)
             return self.objective(x)   
         
         if x0 is None:
@@ -381,14 +381,14 @@ class SymmetricBalance(Balance):
         
         return J
         
-    def optimize(self, x0 = None, check_derivative_epsilon = False, check_jacobian_epsilon = False, *args, **kwargs):
+    def optimize(self, x0 = None, check_derivative = False, check_jacobian = False, *args, **kwargs):
         """
         Compute the handicaps that balance the game using scipy.optimize.root.
         
         Args:
-            check_derivative_epsilon, check_jacobian_epsilon can be used to check the provided row_derivative, col_derivative 
+            check_derivative, check_jacobian can be used to check the provided row_derivative, col_derivative 
                 against a finite difference approximation.
-                A value of None uses a default value.
+                A value of True uses a default value for the finite-difference epsilon.
             *args, **kwargs: Passed to scipy.optimize.root.
                 In particular you may want to consider changing the solver method if the default is not producing good results.
         
@@ -404,11 +404,11 @@ class SymmetricBalance(Balance):
             jac = self.jacobian
             
         def fun(x):
-            if check_derivative_epsilon is not False:
-                self.check_row_derivative(x, epsilon = check_derivative_epsilon)
-                self.check_col_derivative(x, epsilon = check_derivative_epsilon)
-            if check_jacobian_epsilon is not False: 
-                self.check_jacobian(x, epsilon = check_jacobian_epsilon)
+            if check_derivative is not False:
+                self.check_row_derivative(x, epsilon = check_derivative)
+                self.check_col_derivative(x, epsilon = check_derivative)
+            if check_jacobian is not False: 
+                self.check_jacobian(x, epsilon = check_jacobian)
             return self.objective(x)
             
         if x0 is None:
