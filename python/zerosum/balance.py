@@ -278,10 +278,6 @@ class NonSymmetricBalance(Balance):
                 result.col_handicaps: The solved column handicaps.
                 result.F: The resulting payoff matrix.
         """
-        if self.row_derivative is None or self.col_derivative is None:
-            jac = None
-        else:
-            jac = self.jacobian
             
         def fun(x):
             if check_derivative is not False:
@@ -290,6 +286,11 @@ class NonSymmetricBalance(Balance):
             if check_jacobian is not False: 
                 self.check_jacobian(x, epsilon = check_jacobian)
             return self.objective(x)   
+            
+        if self.row_derivative is None or self.col_derivative is None:
+            jac = None
+        else:
+            jac = self.jacobian
         
         if x0 is None:
             x0 = numpy.zeros((self.x_count))
@@ -398,11 +399,6 @@ class SymmetricBalance(Balance):
                 result.handicaps: The solved handicaps.
                 result.F: The resulting payoff matrix.
         """
-        
-        if self.row_derivative is None:
-            jac = None
-        else:
-            jac = self.jacobian
             
         def fun(x):
             if check_derivative is not False:
@@ -411,6 +407,11 @@ class SymmetricBalance(Balance):
             if check_jacobian is not False: 
                 self.check_jacobian(x, epsilon = check_jacobian)
             return self.objective(x)
+            
+        if self.row_derivative is None:
+            jac = None
+        else:
+            jac = self.jacobian
             
         if x0 is None:
             x0 = numpy.zeros((self.x_count))
