@@ -396,6 +396,10 @@ class MultiplicativeBalance(NonSymmetricBalance):
             rectifier: A strictly monotonically increasing function with range (0, inf).
                 While an exponential is appealing from an analytic point of view, it can cause overflows in practice.
                 We therefore default to a reciprocal-linear rectifier.
+                
+        Raises:
+            ValueError: If the size of row_weights or col_weights do not match initial_payoff_matrix.
+            ValueWarning: If initial_payoff_matrix has negative elements.
         """
         self.initial_payoff_matrix = initial_payoff_matrix
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
@@ -461,6 +465,15 @@ class LogisticSymmetricBalance(SymmetricBalance):
                 where max_payoff is twice the value of the game.
                 The initial_payoff_matrix should be skew-symmetric plus a constant offset (namely the value of the game).
                 In particular, all diagonal elements should be equal to the value of the game.
+        Raises:
+            ValueError: 
+                If initial_payoff_matrix is not square.
+                If any element of initial_payoff_matrix is not in the open interval (0, max_payoff). 
+                If the size of strategy_weights does not match the dimensions of initial_payoff_matrix.
+            ValueWarning:
+                If initial_payoff_matrix is not (close to) skew-symmetric plus a constant offset.
+                If initial_payoff_matrix has elements close to 0 and/or max_payoff.
+                    max_payoff is twice the value of the game.
         """
         if strategy_weights is None: strategy_weights = initial_payoff_matrix.shape[0]
         if initial_payoff_matrix.shape[0] != initial_payoff_matrix.shape[1]:
@@ -477,7 +490,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         # Check skew-symmetry. 
         initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
         if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix is not skew-symmetric plus a constant offset.', ValueWarning)
+            warnings.warn('initial_payoff_matrix is not (close to) skew-symmetric plus a constant offset.', ValueWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
@@ -497,6 +510,16 @@ class LogisticSymmetricBalance(SymmetricBalance):
         return normalized_payoffs * normalized_payoffs - 0.25
         
     def optimize(self, *args, **kwargs):
+        """
+        Compute the handicaps that balance the game using scipy.optimize.root.
+        
+        Args:
+            As SymmetricBalance.optimize().
+        
+        Returns:
+            As SymmetricBalance.optimize().
+            result.F is scaled to the original range (0, max_payoff).
+        """
         result = SymmetricBalance.optimize(self, *args, **kwargs)
         # Expand F back to the original range (0, max_payoff).
         result.F = (result.F + 0.5) * self.max_payoff
