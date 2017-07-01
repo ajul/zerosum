@@ -163,6 +163,53 @@ class Balance():
         print('Maximum difference between evaluated col_derivative and finite difference:', 
             numpy.max(numpy.abs(result)))
         return result
+    
+    def optimize_common(self, x0 = None, check_derivative = False, check_jacobian = False, *args, **kwargs):
+        if x0 is None:
+            x0 = numpy.zeros((self.x_count))
+        
+        # Keep the initial handicap of fix_index.
+        if self.fix_index is not None:
+            if x0.size == self.x_count:
+                fix_handicap = x0[self.fix_index]
+                x0 = numpy.delete(x0, self.fix_index)
+            else:
+                fix_handicap = 0.0
+        
+        def fun(x):
+            if self.fix_index is not None:
+                x = numpy.insert(x, self.fix_index, fix_handicap)
+            if check_derivative is not False:
+                self.check_row_derivative(x, epsilon = check_derivative)
+                self.check_col_derivative(x, epsilon = check_derivative)
+            if check_jacobian is not False: 
+                self.check_jacobian(x, epsilon = check_jacobian)
+            y = self.objective(x)
+            if self.fix_index is not None:
+                y = numpy.delete(y, self.fix_index)
+            return y
+    
+        if self.row_derivative is None:
+            jac = None
+        else:
+            def jac(x):
+                if self.fix_index is not None:
+                    x = numpy.insert(x, self.fix_index, fix_handicap)
+                J = self.jacobian(x)
+                if self.fix_index is not None:
+                    J = numpy.delete(J, self.fix_index, axis = 0)
+                    J = numpy.delete(J, self.fix_index, axis = 1)
+                return J
+        
+        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
+        
+        result.handicaps = result.x
+        if self.fix_index is not None:
+            result.handicaps = numpy.insert(result.handicaps, self.fix_index, fix_handicap)
+        
+        result.F = self.evaluate_payoff_matrix(result.handicaps)
+        
+        return result
 
 class NonSymmetricBalance(Balance):
     """
@@ -170,7 +217,7 @@ class NonSymmetricBalance(Balance):
     from an independent set of strategies.
     """
     def __init__(self, handicap_function, row_weights, col_weights, 
-        row_derivative = None, col_derivative = None, value = 0.0):
+        row_derivative = None, col_derivative = None, value = 0.0, fix_index = None):
         """
         Args:
             handicap_function: A function that takes the arguments row_handicaps, col_handicaps 
@@ -205,6 +252,8 @@ class NonSymmetricBalance(Balance):
             warnings.warn('Value %f is non-positive.' % value, ValueWarning)
         
         self.value = value
+        
+        self.fix_index = fix_index
         
     def evaluate_payoff_matrix(self, x):
         """ Evaluate F in terms of the variables, namely the handicap variable vectors. """
@@ -278,31 +327,18 @@ class NonSymmetricBalance(Balance):
                 result.col_handicaps: The solved column handicaps.
                 result.F: The resulting payoff matrix.
         """
-            
-        def fun(x):
-            if check_derivative is not False:
-                self.check_row_derivative(x, epsilon = check_derivative)
-                self.check_col_derivative(x, epsilon = check_derivative)
-            if check_jacobian is not False: 
-                self.check_jacobian(x, epsilon = check_jacobian)
-            return self.objective(x)   
-            
-        if self.row_derivative is None or self.col_derivative is None:
-            jac = None
-        else:
-            jac = self.jacobian
         
-        if x0 is None:
-            x0 = numpy.zeros((self.x_count))
-        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
-        result.row_handicaps = result.x[:self.row_count]
-        result.col_handicaps = result.x[-self.col_count:]
-        result.F = self.evaluate_payoff_matrix(result.x)
+        result = self.optimize_common(x0 = x0, 
+            check_derivative = check_derivative, check_jacobian = check_jacobian, 
+            *args, **kwargs)
+        
+        result.row_handicaps = result.handicaps[:self.row_count]
+        result.col_handicaps = result.handicaps[-self.col_count:]
         
         return result
 
 class SymmetricBalance(Balance):
-    def __init__(self, handicap_function, strategy_weights, row_derivative = None, value = None):
+    def __init__(self, handicap_function, strategy_weights, row_derivative = None, value = None, fix_index = None):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
@@ -339,6 +375,8 @@ class SymmetricBalance(Balance):
             self.col_derivative = lambda row_handicaps, col_handicaps: -row_derivative(row_handicaps, col_handicaps)
             
         self.value = value
+        
+        self.fix_index = fix_index
    
     def evaluate_payoff_matrix(self, x):
         """
@@ -387,6 +425,7 @@ class SymmetricBalance(Balance):
         Compute the handicaps that balance the game using scipy.optimize.root.
         
         Args:
+            x0: Starting point of the optimization. Defaults to a zero vector.
             check_derivative, check_jacobian:
                 Can be used to check the provided row_derivative, col_derivative 
                 against a finite difference approximation with the provided epsilon.
@@ -399,25 +438,10 @@ class SymmetricBalance(Balance):
                 result.handicaps: The solved handicaps.
                 result.F: The resulting payoff matrix.
         """
-            
-        def fun(x):
-            if check_derivative is not False:
-                self.check_row_derivative(x, epsilon = check_derivative)
-                self.check_col_derivative(x, epsilon = check_derivative)
-            if check_jacobian is not False: 
-                self.check_jacobian(x, epsilon = check_jacobian)
-            return self.objective(x)
-            
-        if self.row_derivative is None:
-            jac = None
-        else:
-            jac = self.jacobian
-            
-        if x0 is None:
-            x0 = numpy.zeros((self.x_count))
-        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
-        result.handicaps = result.x
-        result.F = self.evaluate_payoff_matrix(result.x)
+        result = self.optimize_common(x0 = x0, 
+            check_derivative = check_derivative, check_jacobian = check_jacobian, 
+            *args, **kwargs)
+        
         return result
     
 class MultiplicativeBalance(NonSymmetricBalance):
