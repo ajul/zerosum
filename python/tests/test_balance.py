@@ -1,6 +1,7 @@
 import numpy
 import unittest
 import warnings
+import timeit
 import zerosum.balance
 
 strategy_count = 16
@@ -105,6 +106,21 @@ class TestMultiplicativeBalance(unittest.TestCase):
             result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(tol = solver_tol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
+            
+    @staticmethod
+    def time_trial(method):
+        value = numpy.random.rand() + 1.0
+        row_weights = random_weights(strategy_count)
+        col_weights = random_weights(strategy_count + 1)
+        data = numpy.random.random((strategy_count, strategy_count + 1))
+        result = zerosum.balance.MultiplicativeBalance(data, row_weights, col_weights, value = value).optimize(tol = solver_tol)
+        
+    def test_method_timing(self):
+        """ Very crude test for comparing the performance of different optimization methods. """
+        print()
+        for method in ['hybr', 'lm']:
+            t = timeit.timeit("TestMultiplicativeBalance.time_trial('%s')" % method, number=num_random_trials, globals=globals())
+            print("Method '%s' took %f s." % (method, t / num_random_trials))
 
 class TestLogisticSymmetricBalance(unittest.TestCase):
     def random_data(self, n):
@@ -182,3 +198,17 @@ class TestLogisticSymmetricBalance(unittest.TestCase):
             self.assertTrue(result.success)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 0), balance.max_payoff * 0.5, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 1), balance.max_payoff * 0.5, atol = solution_atol)
+    
+    @staticmethod
+    def time_trial(method):
+        strategy_weights = random_weights(strategy_count)
+        data = self.random_data(strategy_count)
+        balance = zerosum.balance.LogisticSymmetricBalance(data, strategy_weights)
+        result = balance.optimize(tol = solver_tol)
+    
+    def test_method_timing(self):
+        """ Very crude test for comparing the performance of different optimization methods. """
+        print()
+        for method in ['hybr', 'lm']:
+            t = timeit.timeit("TestMultiplicativeBalance.time_trial('%s')" % method, number=num_random_trials, globals=globals())
+            print("Method '%s' took %f s." % (method, t / num_random_trials))
