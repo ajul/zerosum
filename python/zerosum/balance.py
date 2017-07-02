@@ -601,6 +601,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
     
     def handicap_function(self, row_handicaps, col_handicaps):
         # Normalized to the range (-0.5, 0.5).
+        # This seems to perform better than using the original range.
         return 1.0 / (1.0 + numpy.exp(row_handicaps[:, None] - col_handicaps[None, :] + self.initial_offset_matrix)) - 0.5
         
     def row_derivative(self, row_handicaps, col_handicaps):
