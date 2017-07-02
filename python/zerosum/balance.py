@@ -278,7 +278,7 @@ class NonSymmetricBalance(Balance):
             fix_index = numpy.argmax(weights)
         elif fix_index is not None:
             if weights[fix_index] == 0.0:
-                raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
+                warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
         self.fix_index = fix_index
         
@@ -411,7 +411,7 @@ class SymmetricBalance(Balance):
             fix_index = numpy.argmax(self.strategy_weights)
         elif fix_index is not None:
             if self.strategy_weights[fix_index] == 0.0:
-                raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
+                warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
         self.fix_index = fix_index
    
@@ -491,8 +491,9 @@ class MultiplicativeBalance(NonSymmetricBalance):
         value = 1.0, fix_index = True, rectifier = zerosum.function.ReciprocalLinearRectifier()):
         """
         Args:
-            initial_payoff_matrix: Should be nonnegative.
+            initial_payoff_matrix: Should be nonnegative and preferably strictly positive.
             value: Should be strictly positive. Note that the default is 1.0.
+            fix_index: Since this handicap function is invariant with respect to a global scale, we default to True.
             rectifier: A strictly monotonically increasing function with range (0, inf).
                 While an exponential is appealing from an analytic point of view, it can cause overflows in practice.
                 We therefore default to a reciprocal-linear rectifier.
@@ -568,6 +569,9 @@ class LogisticSymmetricBalance(SymmetricBalance):
                 where max_payoff is twice the value of the game.
                 The initial_payoff_matrix should be skew-symmetric plus a constant offset (namely the value of the game).
                 In particular, all diagonal elements should be equal to the value of the game.
+            strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
+                If only an integer is specified, a uniform distribution will be used.
+            fix_index: Since this handicap function is invariant with respect to a global offset, we default to True.
         Raises:
             ValueError: 
                 If initial_payoff_matrix is not square.

@@ -35,7 +35,7 @@ class TestNonSymmetricBalance(unittest.TestCase):
         return numpy.ones(x.size // 2)
 
     def test_fix_index_zero_weight_error(self):
-        with self.assertRaisesRegex(ValueError, 'zero weight'):
+        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
             strategy_weights = numpy.array([0.0, 1.0])
             zerosum.balance.NonSymmetricBalance(self.dummy_handicap_function, row_weights = strategy_weights, col_weights = strategy_weights, fix_index = 0)
 
@@ -44,7 +44,7 @@ class TestSymmetricBalance(unittest.TestCase):
         return numpy.ones(x.size)
 
     def test_fix_index_zero_weight_error(self):
-        with self.assertRaisesRegex(ValueError, 'zero weight'):
+        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
             strategy_weights = numpy.array([0.0, 1.0])
             zerosum.balance.SymmetricBalance(self.dummy_handicap_function, strategy_weights = strategy_weights, fix_index = 0)
 
