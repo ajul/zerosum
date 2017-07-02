@@ -167,6 +167,25 @@ class Balance():
         return result
     
     def optimize_common(self, x0 = None, check_derivative = False, check_jacobian = False, *args, **kwargs):
+        """
+        Common optimization code.
+        
+        Args:
+            x0: Starting point of the optimization. Defaults to a zero vector.
+            check_derivative, check_jacobian:
+                Can be used to check the provided row_derivative, col_derivative 
+                against a finite difference approximation with the provided epsilon.
+                A value of True uses a default value for epsilon.
+            
+            *args, **kwargs: Passed to scipy.optimize.root.
+                In particular you may want to consider changing the solver method 
+                if the default is not producing good results.
+            
+            Returns: 
+            The result of scipy.optimize.root, with the following additional values:
+                result.handicaps: The solved handicap vector, concatenated for rows and columns if appropriate.
+                result.F: The resulting payoff matrix.
+        """
         if x0 is None:
             x0 = numpy.zeros((self.handicap_count))
         
@@ -236,6 +255,9 @@ class NonSymmetricBalance(Balance):
                 and produce the derviative of the payoff matrix with respect to each element's row or column handicap.
             value: The desired value of the resulting game. 
                 This is equal to the row player's payoff and the negative of the column player's payoff.
+            fix_index: If set, this will fix one handicap at its starting value and ignore the corresponding payoff.
+                This is useful if the handicap function is known to have a degree of invariance.
+                If set to true, a strategy with nonzero weight will automatically be selected.
         """
         self.handicap_function = handicap_function
         
@@ -261,13 +283,13 @@ class NonSymmetricBalance(Balance):
         
         self.fix_index = fix_index
         
-    def evaluate_payoff_matrix(self, x):
+    def evaluate_payoff_matrix(self, handicaps):
         """ Evaluate F in terms of the variables, namely the handicap variable vectors. """
-        row_handicaps = x[:self.row_count]
-        col_handicaps = x[-self.col_count:]
+        row_handicaps = handicaps[:self.row_count]
+        col_handicaps = handicaps[-self.col_count:]
         return self.handicap_function(row_handicaps, col_handicaps)
         
-    def objective(self, x):
+    def objective(self, handicaps):
         """
         Compute the objective vector, which is desired to be zero. 
         This is the expected payoff of each strategy for that player, times the weight of that stategy.
@@ -275,7 +297,7 @@ class NonSymmetricBalance(Balance):
         This works since they do not affect the expected payoff of other strategies.
         """
     
-        F = self.evaluate_payoff_matrix(x)
+        F = self.evaluate_payoff_matrix(handicaps)
         
         # Dot products are weighted.
         row_objectives = (numpy.tensordot(F, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
@@ -283,13 +305,13 @@ class NonSymmetricBalance(Balance):
         
         return numpy.concatenate((row_objectives, col_objectives))
         
-    def jacobian(self, x):
+    def jacobian(self, handicaps):
         """ Compute the Jacobian of the objective using the provided row_derivative, col_derivative. """
         
         # J_ij = derivative of payoff i with respect to handicap j.
         
-        dFdr = self.row_derivative_combined(x)
-        dFdc = self.col_derivative_combined(x)
+        dFdr = self.row_derivative_combined(handicaps)
+        dFdc = self.col_derivative_combined(handicaps)
         
         # Derivative of row payoffs with respect to row handicaps.
         Jrr = numpy.tensordot(dFdr, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
@@ -370,6 +392,9 @@ class SymmetricBalance(Balance):
             value: Value of the game. 
                 If not supplied it will be set automatically based on the diagonal elements
                 when the payoff matrix is first evaluated.
+            fix_index: If set, this will fix one handicap at its starting value and ignore the corresponding payoff.
+                This is useful if the handicap function is known to have a degree of invariance.
+                If set to true, a strategy with nonzero weight will automatically be selected.
         """
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights, nonzero_weight_index = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
@@ -388,17 +413,17 @@ class SymmetricBalance(Balance):
         
         self.fix_index = fix_index
    
-    def evaluate_payoff_matrix(self, x):
+    def evaluate_payoff_matrix(self, handicaps):
         """
         Evaluates the payoff matrix by calling handicap_function.
         Also sets self.value if not already set.
         """
-        result = self.handicap_function(x, x)
+        result = self.handicap_function(handicaps, handicaps)
         if self.value is None:
             self.value = numpy.average(numpy.diag(result), weights = self.strategy_weights)
         return result
         
-    def objective(self, x):
+    def objective(self, handicaps):
         """
         Compute the objective vector, which is desired to be zero. 
         This is the expected payoff of each strategy for that player, times the weight of that stategy.
@@ -406,16 +431,16 @@ class SymmetricBalance(Balance):
         This works since they do not affect the expected payoff of other strategies.
         """
         
-        F = self.evaluate_payoff_matrix(x)
+        F = self.evaluate_payoff_matrix(handicaps)
         
         # Dot products are weighted.
         objectives = (numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
         
         return objectives
         
-    def jacobian(self, x):
+    def jacobian(self, handicaps):
         """ Compute the Jacobian of the objective using the provided row_derivative. """
-        dFdr = self.row_derivative_combined(x)
+        dFdr = self.row_derivative_combined(handicaps)
         
         # Derivative of row payoffs with respect to row handicaps.
         Jrr = numpy.tensordot(dFdr, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
