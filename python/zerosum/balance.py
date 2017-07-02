@@ -486,7 +486,7 @@ class SymmetricBalance(Balance):
 class MultiplicativeBalance(NonSymmetricBalance):
     """
     A special case where the handicap functions are col_handicap / row_handicap * initial_payoff.
-    The actual optimization is done using the log of the handicaps.
+    The actual optimization is done by mapping raw handicaps in (-inf, inf) to the actual handicaps (0, inf) using a rectifier.
     """
     
     def __init__(self, initial_payoff_matrix, row_weights = None, col_weights = None, 
