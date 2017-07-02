@@ -45,13 +45,11 @@ def _process_weights(arg):
         
     weights = weights / weight_sum
     
-    nonzero_weight_index = numpy.flatnonzero(weights)[0]
-    
     # Replace zeros with 1.0 / weights.size for purposes of weighting the objective vector.
     objective_weights = weights.copy()
     objective_weights[objective_weights == 0.0] = 1.0 / weights.size
     
-    return count, weights, objective_weights, nonzero_weight_index
+    return count, weights, objective_weights
     
 class Balance():
     """ 
@@ -255,9 +253,9 @@ class NonSymmetricBalance(Balance):
                 and produce the derviative of the payoff matrix with respect to each element's row or column handicap.
             value: The desired value of the resulting game. 
                 This is equal to the row player's payoff and the negative of the column player's payoff.
-            fix_index: If set, this will fix one handicap at its starting value and ignore the corresponding payoff.
+            fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
                 This is useful if the handicap function is known to have a degree of invariance.
-                If set to true, a strategy with nonzero weight will automatically be selected.
+                If set to True, a strategy with maximum weight will be selected.
         """
         self.handicap_function = handicap_function
         
@@ -267,18 +265,18 @@ class NonSymmetricBalance(Balance):
         self.row_derivative = row_derivative
         self.col_derivative = col_derivative
     
-        self.row_count, self.row_weights, self.row_objective_weights, nonzero_weight_index = _process_weights(row_weights)
-        self.col_count, self.col_weights, self.col_objective_weights, _ = _process_weights(col_weights)
+        self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
+        self.col_count, self.col_weights, self.col_objective_weights = _process_weights(col_weights)
         
         self.handicap_count = self.row_count + self.col_count
         
         self.value = value
         
+        weights = numpy.concatenate((self.row_weights, self.col_weights))
         if fix_index is True:
             # Select the first nonzero weight.
-            fix_index = nonzero_weight_index
+            fix_index = numpy.argmax(weights)
         elif fix_index is not None:
-            weights = numpy.concatenate((self.row_weights, self.col_weights))
             if weights[fix_index] == 0.0:
                 raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
         
@@ -393,11 +391,11 @@ class SymmetricBalance(Balance):
             value: Value of the game. 
                 If not supplied it will be set automatically based on the diagonal elements
                 when the payoff matrix is first evaluated.
-            fix_index: If set, this will fix one handicap at its starting value and ignore the corresponding payoff.
+            fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
                 This is useful if the handicap function is known to have a degree of invariance.
-                If set to true, a strategy with nonzero weight will automatically be selected.
+                If set to True, a strategy with maximum weight will be selected.
         """
-        self.handicap_count, self.strategy_weights, self.strategy_objective_weights, nonzero_weight_index = _process_weights(strategy_weights)
+        self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
         self.col_count = self.handicap_count
         
@@ -409,8 +407,8 @@ class SymmetricBalance(Balance):
         self.value = value
         
         if fix_index is True:
-            # Select the first nonzero weight.
-            fix_index = nonzero_weight_index
+            # Select the maximum weight.
+            fix_index = numpy.argmax(self.strategy_weights)
         elif fix_index is not None:
             if self.strategy_weights[fix_index] == 0.0:
                 raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
