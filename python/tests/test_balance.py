@@ -29,6 +29,24 @@ class TestWeights(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'negative'):
             zerosum.balance._process_weights(weights)
 
+class TestNonSymmetricBalance(unittest.TestCase):
+    def dummy_handicap_function(self, x):
+        return numpy.ones(x.size // 2)
+
+    def test_fix_index_zero_weight_error(self):
+        with self.assertRaisesRegex(ValueError, 'zero weight'):
+            strategy_weights = numpy.array([0.0, 1.0])
+            zerosum.balance.NonSymmetricBalance(self.dummy_handicap_function, row_weights = strategy_weights, col_weights = strategy_weights, fix_index = 0)
+
+class TestSymmetricBalance(unittest.TestCase):
+    def dummy_handicap_function(self, x):
+        return numpy.ones(x.size)
+
+    def test_fix_index_zero_weight_error(self):
+        with self.assertRaisesRegex(ValueError, 'zero weight'):
+            strategy_weights = numpy.array([0.0, 1.0])
+            zerosum.balance.SymmetricBalance(self.dummy_handicap_function, strategy_weights = strategy_weights, fix_index = 0)
+
 class TestMultiplicativeBalance(unittest.TestCase):
     def test_negative_matrix_warning(self):
         data = -numpy.ones((2, 2))
@@ -41,6 +59,7 @@ class TestMultiplicativeBalance(unittest.TestCase):
             zerosum.balance.MultiplicativeBalance(data, numpy.ones((3,)), numpy.ones((2,)))
         with self.assertRaisesRegex(ValueError, 'size of col_weights'):
             zerosum.balance.MultiplicativeBalance(data, numpy.ones((2,)), numpy.ones((3,)))
+            
             
     def test_check_derivative(self):
         print()

@@ -280,6 +280,10 @@ class NonSymmetricBalance(Balance):
         if fix_index is True:
             # Select the first nonzero weight.
             fix_index = nonzero_weight_index
+        elif fix_index is not None:
+            weights = numpy.concatenate((self.row_weights, self.col_weights))
+            if weights[fix_index] == 0.0:
+                raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
         
         self.fix_index = fix_index
         
@@ -410,6 +414,9 @@ class SymmetricBalance(Balance):
         if fix_index is True:
             # Select the first nonzero weight.
             fix_index = nonzero_weight_index
+        elif fix_index is not None:
+            if self.strategy_weights[fix_index] == 0.0:
+                raise ValueError('fix_index %d corresponds to a strategy with zero weight.' % fix_index)
         
         self.fix_index = fix_index
    
