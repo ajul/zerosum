@@ -29,8 +29,8 @@ text_size = 15
 loc = matplotlib.ticker.MultipleLocator(base=0.1)
 
 # Plot attacker and defender on separate subplots. Attacker first.
-fig = plt.figure(figsize = (12, 7))
-gs = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[2, 3])
+fig = plt.figure(figsize = (18, 6))
+gs = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[1, 1])
 ax = plt.subplot(gs[0])
 
 # Draw a line indicating where the uniform distribution would be.
@@ -76,7 +76,7 @@ ax.set_title('Attacker')
 ax.set_xlabel('Nash probability of initial game', fontsize = text_size)
 ax.set_ylabel('Log (handicap) producing uniform Nash', fontsize = text_size)
 
-ax.set_xlim(left=0.0, right = 0.2)
+ax.set_xlim(left=0.0, right = 0.3)
 ax.set_ylim(bottom=-0.2, top = 0.25)
 
 # Now for the defender plot.
