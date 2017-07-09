@@ -8,6 +8,22 @@ class NonSymmetricDataset():
         if col_names is None: col_names = row_names
         self.col_names = col_names
 
+def make_pokemon_dual_type_defender(data, names):
+    """ Given names and a single-type payoff matrix, creates a dataset with all dual-type defenders."""
+    dual_names = list(names)
+    dual_data = numpy.copy(data)
+    for i, type_i in enumerate(names):
+        for j, type_j in enumerate(names):
+            if j <= i: continue
+            new_name = type_i + '/' + type_j
+            dual_names.append(new_name)
+            
+    for i in range(len(names)):
+        new_cols = data[:, i][:, None] * data[:, i+1:]
+        dual_data = numpy.append(dual_data, new_cols, axis = 1)
+        
+    return NonSymmetricDataset(dual_data, names, dual_names)
+        
 # Pokemon type charts. Source: https://bulbapedia.bulbagarden.net/wiki/Type/Type_chart
 
 pokemon_type_names_1 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 
@@ -77,6 +93,8 @@ pokemon_type_chart_6 = numpy.array([
     [1.0, 2.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0,],
     ])
 pokemon_6 = NonSymmetricDataset(pokemon_type_chart_6, pokemon_type_names_6)
+
+pokemon_6_dual_defender = make_pokemon_dual_type_defender(pokemon_type_chart_6, pokemon_type_names_6)
         
 pokemon_type_colors = {
     'Normal' : '#A8A878',
