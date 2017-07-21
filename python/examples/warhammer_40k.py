@@ -20,6 +20,14 @@ row_nash_8, col_nash_8 = zerosum.nash.nash(dataset.nonsymmetric.wh40k_8_to_wound
 # Handicaps producing a uniform Nash equilibrium.
 balance_8 = zerosum.balance.MultiplicativeBalance(dataset.nonsymmetric.wh40k_8_to_wound, strength_weights, toughness_weights).optimize()
 
+dataset.csv.write_csv('out/wh40k_7_to_wound_init.csv',
+                      dataset.nonsymmetric.wh40k_7_to_wound,
+                      [str(i + 1) for i in range(10)])
+
+dataset.csv.write_csv('out/wh40k_8_to_wound_init.csv',
+                      dataset.nonsymmetric.wh40k_8_to_wound,
+                      [str(i + 1) for i in range(10)])
+
 dataset.csv.write_csv('out/wh40k_7_to_wound_opt.csv',
                       balance_7.F, [str(i + 1) for i in range(10)],
                       row_footers = balance_7.row_handicaps / balance_7.row_handicaps[0],
