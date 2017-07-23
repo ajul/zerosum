@@ -15,13 +15,14 @@ import matplotlib.pyplot as plt
 data = dataset.nonsymmetric.pokemon_6_dual_defender.data
 # Names of the Pokemon types.
 row_names = dataset.nonsymmetric.pokemon_6_dual_defender.row_names
-# Vector of color codes for the types.
-row_colors = [dataset.nonsymmetric.pokemon_type_colors[name.split('/')[0]] for name in row_names]
-
-# Names of the Pokemon types.
 col_names = dataset.nonsymmetric.pokemon_6_dual_defender.col_names
-# Vector of color codes for the types.
-col_colors = [dataset.nonsymmetric.pokemon_type_colors[name.split('/')[0]] for name in col_names]
+
+# Single-type colors.
+colors = [dataset.nonsymmetric.pokemon_type_colors[t] for t in row_names]
+
+# Dual-type colors.
+primary_colors = [dataset.nonsymmetric.pokemon_type_colors[t.split('/')[0]] for t in col_names]
+secondary_colors = [dataset.nonsymmetric.pokemon_type_colors[t.split('/')[-1]] for t in col_names]
 
 # Nash equilibrium of the initial game.
 row_nash, col_nash = zerosum.nash.nash(data)
@@ -55,13 +56,13 @@ x = row_nash.strategy
 y = numpy.log(balance.row_handicaps)
 y -= numpy.mean(y)
 
-ax.scatter(x, y, s = marker_size, c = row_colors)
+ax.scatter(x, y, s = marker_size, c = colors)
 
 # Label each scatter plot point with the type name.
-for pointx, pointy, name, color in zip(x, y, row_names, row_colors):
+for pointx, pointy, name, color in zip(x, y, row_names, colors):
     ha = 'left'
     # manual adjustment
-    if name == 'Steel':
+    if name in ['Steel', 'Water']:
         pointy += 0.01
     if name == 'Ghost':
         pointy -= 0.02
@@ -97,16 +98,25 @@ x = col_nash.strategy
 y = numpy.log(balance.col_handicaps)
 y -= numpy.mean(y)
 
-sel = x >= 1e-6
+# Remove low-weight strategies.
+sel_nz = x >= 1e-6
+x_nz = x[sel_nz]
+y_nz = y[sel_nz]
+col_names_nz = [name for i, name in enumerate(col_names) if sel_nz[i]]
+primary_colors_nz = [c for i, c in enumerate(primary_colors) if sel_nz[i]]
+secondary_colors_nz = [c for i, c in enumerate(secondary_colors) if sel_nz[i]]
 
-ax.scatter(x[sel], y[sel], s = marker_size, c = [c for i, c in enumerate(col_colors) if sel[i]])
+ax.scatter(x_nz, y_nz, s = marker_size, c = primary_colors_nz)
+ax.scatter(x_nz, y_nz, s = marker_size / 4, linewidths = 0, c = secondary_colors_nz, zorder=1.5)
 
-for pointx, pointy, name, color in zip(x, y, col_names, col_colors):
+for pointx, pointy, name in zip(x_nz, y_nz, col_names_nz):
     ha = 'left'
     if pointx < 1e-6: continue
     # manual adjustment
     if name == 'Fairy':
         pointy += 0.01
+    if name in ['Ground/Fire', 'Ground/Water']:
+        pointy -= 0.01
     
     name = ' ' + name + ' '
     plt.text(pointx, pointy, name,
@@ -116,7 +126,7 @@ for pointx, pointy, name, color in zip(x, y, col_names, col_colors):
 
 ax.xaxis.set_major_locator(loc)
 ax.yaxis.set_major_locator(loc)
-ax.set_title('Defender (nonzero Nash only)')
+ax.set_title('Defender (types with nonzero Nash probability in initial game only)')
 
 ax.set_xlabel('Nash probability of initial game', fontsize = text_size)
 ax.yaxis.set_ticklabels([])
