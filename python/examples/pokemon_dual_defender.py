@@ -98,8 +98,8 @@ x = col_nash.strategy
 y = numpy.log(balance.col_handicaps)
 y -= numpy.mean(y)
 
-# Remove low-weight strategies.
-sel_nz = x >= 1e-6
+# Remove zero-weight strategies.
+sel_nz = x > 0.0
 x_nz = x[sel_nz]
 y_nz = y[sel_nz]
 col_names_nz = [name for i, name in enumerate(col_names) if sel_nz[i]]
@@ -111,7 +111,6 @@ ax.scatter(x_nz, y_nz, s = marker_size / 4, linewidths = 0, c = secondary_colors
 
 for pointx, pointy, name in zip(x_nz, y_nz, col_names_nz):
     ha = 'left'
-    if pointx < 1e-6: continue
     # manual adjustment
     if name == 'Fairy':
         pointy += 0.01
@@ -136,6 +135,6 @@ ax.set_ylim(bottom=bottom, top = top)
 
 plt.tight_layout()
 
-plt.savefig("out/pokemon_dual_defender_scatter.png", dpi = dpi, bbox_inches = "tight")
+plt.savefig("out/pokemon_dual_scatter.png", dpi = dpi, bbox_inches = "tight")
 plt.show()
 
