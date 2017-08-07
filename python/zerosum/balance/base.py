@@ -6,6 +6,9 @@ import warnings
 class Balance():
     """ 
     Base class for balancing. Not intended to be used directly.
+    Subclasses should extend either NonSymmetricBalance or SymmetricBalance.
+    They also need to implement handicap_function, and optionally row_derivative and col_derivative 
+    (Or just row_derivative for SymmetricBalance.)
     """
     def jacobian_fd(self, epsilon = None):
         """ Computes a finite (central) difference approximation of the Jacobian. """
