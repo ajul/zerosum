@@ -31,8 +31,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         if value <= 0.0:
             warnings.warn('Value %f is non-positive.' % value, ValueWarning)
     
-        NonSymmetricBalance.__init__(self, self.handicap_function, row_weights = row_weights, col_weights = col_weights, 
-            row_derivative = self.row_derivative, col_derivative = self.col_derivative, 
+        NonSymmetricBalance.__init__(self, row_weights = row_weights, col_weights = col_weights, 
             value = value, fix_index = fix_index)
             
         if initial_payoff_matrix.shape[0] != self.row_weights.size:

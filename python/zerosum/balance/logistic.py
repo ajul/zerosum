@@ -31,7 +31,7 @@ class LogisticSymmetricBalance(SymmetricBalance):
         if initial_payoff_matrix.shape[0] != initial_payoff_matrix.shape[1]:
             raise ValueError('initial_payoff_matrix is not square.')
         
-        SymmetricBalance.__init__(self, self.handicap_function, strategy_weights, row_derivative = self.row_derivative, fix_index = fix_index)
+        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
         
         if initial_payoff_matrix.shape[0] != self.strategy_weights.size:
             raise ValueError('The size of strategy_weights does not match the dimensions of initial_payoff_matrix.')

@@ -31,22 +31,18 @@ class TestWeights(unittest.TestCase):
             zerosum.balance.base._process_weights(weights)
 
 class TestNonSymmetricBalance(unittest.TestCase):
-    def dummy_handicap_function(self, x):
-        return numpy.ones(x.size // 2)
 
     def test_fix_index_zero_weight_error(self):
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
             strategy_weights = numpy.array([0.0, 1.0])
-            zerosum.balance.base.NonSymmetricBalance(self.dummy_handicap_function, row_weights = strategy_weights, col_weights = strategy_weights, fix_index = 0)
+            zerosum.balance.base.NonSymmetricBalance(row_weights = strategy_weights, col_weights = strategy_weights, fix_index = 0)
 
 class TestSymmetricBalance(unittest.TestCase):
-    def dummy_handicap_function(self, x):
-        return numpy.ones(x.size)
 
     def test_fix_index_zero_weight_error(self):
         with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
             strategy_weights = numpy.array([0.0, 1.0])
-            zerosum.balance.base.SymmetricBalance(self.dummy_handicap_function, strategy_weights = strategy_weights, fix_index = 0)
+            zerosum.balance.base.SymmetricBalance(strategy_weights = strategy_weights, fix_index = 0)
 
 class TestMultiplicativeBalance(unittest.TestCase):
     def test_negative_matrix_warning(self):

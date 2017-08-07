@@ -2,54 +2,6 @@ import zerosum.function
 import numpy
 import scipy.optimize
 import warnings
-
-class DerivativeWarning(RuntimeWarning):
-    pass
-    
-class ValueWarning(RuntimeWarning):
-    pass
-
-def _process_weights(arg):
-    """ 
-    Helper function for processing weight arguments.
-    
-    Args:
-        arg: Either:
-            An integer, in which case the weights will be uniform over that many strategies.
-            A weight distribution, which will be normalized to sum to 1.
-            
-    Returns:
-        count: The number of weights/strategies.
-        weights: The (normalized) weights.
-        objective_weights: As weights, but 0-weights are replaced by 1.
-            Used for weighting the objective function.
-            
-    Raises:
-        ValueError: If weights sum to 0, or any of the weights are negative.
-    
-    """
-    try:
-        weights = arg.copy()
-        count = weights.size
-    except:
-        weights = numpy.ones((arg)) / arg
-        count = arg
-        
-    weight_sum = numpy.sum(weights)
-    
-    if weight_sum == 0.0:
-        raise ValueError('Weights sum to 0.')
-        
-    if numpy.any(weights < 0.0):
-        raise ValueError('Received negative weight(s).')
-        
-    weights = weights / weight_sum
-    
-    # Replace zeros with 1.0 / weights.size for purposes of weighting the objective vector.
-    objective_weights = weights.copy()
-    objective_weights[objective_weights == 0.0] = 1.0 / weights.size
-    
-    return count, weights, objective_weights
     
 class Balance():
     """ 
@@ -208,9 +160,7 @@ class Balance():
                 y = numpy.delete(y, self.fix_index)
             return y
     
-        if self.row_derivative is None:
-            jac = None
-        else:
+        if self.has_derivative():
             def jac(x):
                 if self.fix_index is not None:
                     x = numpy.insert(x, self.fix_index, fix_handicap)
@@ -219,6 +169,8 @@ class Balance():
                     J = numpy.delete(J, self.fix_index, axis = 0)
                     J = numpy.delete(J, self.fix_index, axis = 1)
                 return J
+        else:
+            jac = None
         
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
         
@@ -229,28 +181,50 @@ class Balance():
         result.F = self.evaluate_payoff_matrix(result.handicaps)
         
         return result
+        
+    def has_derivative(self):
+        try:
+            self.row_derivative, self.col_derivative
+            return True
+        except AttributeError:
+            return False
+            
+    def handicap_function(self, row_handicaps, col_handicaps):
+        """
+            Args:
+                row_handicaps, col_handicaps 
+            Returns:
+                The payoff matrix.
+                Each element of the payoff matrix should depend only on the corresponding row and column handicap.
+                It is highly desirable that the function be strictly monotonically decreasing 
+                in row_handicap and strictly monotonically increasing in col_handicap for every element. 
+                NOTE: In the symmetric case the function should also have the property that 
+                handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
+                where the value of the game is constant.
+                This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
+                In particular, all diagonal elements should be equal to the value of the game.
+        """
+        raise NotImplementedError
+            
+    # Optional: implement the following methods in subclasses:
+    #def row_derivative(self, row_handicaps, col_handicaps):
+        """Returns: the derivative of the payoff matrix with respect to the row handicaps."""
+        
+    #def col_derivative(self, row_handicaps, col_handicaps):
+        """Returns: the derivative of the payoff matrix with respect to the column handicaps."""
 
 class NonSymmetricBalance(Balance):
     """
     This version of Balance for non-symmetric games, where each player is choosing
     from an independent set of strategies.
     """
-    def __init__(self, handicap_function, row_weights, col_weights, 
-        row_derivative = None, col_derivative = None, value = 0.0, fix_index = None):
+    def __init__(self, row_weights, col_weights, value = 0.0, fix_index = None):
         """
         Args:
-            handicap_function: A function that takes the arguments row_handicaps, col_handicaps 
-                and produces the payoff matrix.
-                Each element of the payoff matrix should depend only on the corresponding 
-                row and column handicap.
-                It is highly desirable that the function be strictly monotonically decreasing in row_handicap 
-                and strictly monotonically increasing in col_handicap for every element. 
             row_weights, col_weights: Defines the desired Nash equilibrium 
                 in terms of row and column strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
                 Weights will be normalized.
-            row_derivative, col_derivative: Functions that take the arguments row_handicap, col_handicap 
-                and produce the derviative of the payoff matrix with respect to each element's row or column handicap.
             value: The desired value of the resulting game. 
                 This is equal to the row player's payoff and the negative of the column player's payoff.
             fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
@@ -259,13 +233,6 @@ class NonSymmetricBalance(Balance):
         Raises:
             ValueError if only one of row_derivative and col_derivative is provided.
         """
-        self.handicap_function = handicap_function
-        
-        if (row_derivative is None) != (col_derivative is None):
-            raise ValueError('Both row_derivative and col_derivative must be provided for the Jacobian to function.')
-        
-        self.row_derivative = row_derivative
-        self.col_derivative = col_derivative
     
         self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
         self.col_count, self.col_weights, self.col_objective_weights = _process_weights(col_weights)
@@ -367,29 +334,15 @@ class NonSymmetricBalance(Balance):
         return result
 
 class SymmetricBalance(Balance):
-    def __init__(self, handicap_function, strategy_weights, row_derivative = None, value = None, fix_index = None):
+    def __init__(self, strategy_weights, row_derivative = None, value = None, fix_index = None):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
         Thus there are no independent inputs for column strategies.
         
         Args:
-            handicap_function: A function that takes the arguments row_handicaps, col_handicaps 
-                and produces the payoff matrix.
-                Each element of the payoff matrix should depend only on the corresponding row and column handicap.
-                It is highly desirable that the function be strictly monotonically decreasing 
-                in row_handicap and strictly monotonically increasing in col_handicap for every element. 
-                NOTE: In this symmetric case the function should also have the property that 
-                handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
-                where the value of the game is constant.
-                This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
-                In particular, all diagonal elements should be equal to the value of the game.
             strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
-            row_derivative: A function that takes the arguments row_handicaps, col_handicaps
-                and produces the derviative of the payoff matrix with respect to the row handicaps.
-                The skew-symmetry property means that the column derivative is 
-                the negative of the row derivative with the players interchanged.
             value: Value of the game. 
                 If not supplied it will be set automatically based on the diagonal elements
                 when the payoff matrix is first evaluated.
@@ -400,11 +353,6 @@ class SymmetricBalance(Balance):
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
         self.col_count = self.handicap_count
-        
-        if row_derivative is not None:
-            self.row_derivative = row_derivative
-            # Using the skew-symmetric property.
-            self.col_derivative = lambda row_handicaps, col_handicaps: -row_derivative(row_handicaps, col_handicaps)
             
         self.value = value
         
@@ -482,3 +430,55 @@ class SymmetricBalance(Balance):
             *args, **kwargs)
         
         return result
+    
+    def col_derivative(self, row_handicaps, col_handicaps):
+        """ Using the skew-symmetry property. """
+        return -self.row_derivative(col_handicaps, row_handicaps)
+        
+class DerivativeWarning(RuntimeWarning):
+    pass
+    
+class ValueWarning(RuntimeWarning):
+    pass
+
+def _process_weights(arg):
+    """ 
+    Helper function for processing weight arguments.
+    
+    Args:
+        arg: Either:
+            An integer, in which case the weights will be uniform over that many strategies.
+            A weight distribution, which will be normalized to sum to 1.
+            
+    Returns:
+        count: The number of weights/strategies.
+        weights: The (normalized) weights.
+        objective_weights: As weights, but 0-weights are replaced by 1.
+            Used for weighting the objective function.
+            
+    Raises:
+        ValueError: If weights sum to 0, or any of the weights are negative.
+    
+    """
+    try:
+        weights = arg.copy()
+        count = weights.size
+    except:
+        weights = numpy.ones((arg)) / arg
+        count = arg
+        
+    weight_sum = numpy.sum(weights)
+    
+    if weight_sum == 0.0:
+        raise ValueError('Weights sum to 0.')
+        
+    if numpy.any(weights < 0.0):
+        raise ValueError('Received negative weight(s).')
+        
+    weights = weights / weight_sum
+    
+    # Replace zeros with 1.0 / weights.size for purposes of weighting the objective vector.
+    objective_weights = weights.copy()
+    objective_weights[objective_weights == 0.0] = 1.0 / weights.size
+    
+    return count, weights, objective_weights
