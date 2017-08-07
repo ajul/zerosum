@@ -17,8 +17,8 @@ class LanchesterSymmetricBalance(SymmetricBalance):
         # TODO: check symmetry
     
     def handicap_function(self, row_handicaps, col_handicaps):
-        row_scales = numpy.exp(row_handicaps)
-        col_scales = numpy.exp(-col_handicaps)
+        row_scales = numpy.exp(-row_handicaps)
+        col_scales = numpy.exp(col_handicaps)
         relative_strengths = row_scales[:, None] * self.initial_payoff_matrix * col_scales[None, :]
         row_winner = relative_strengths > 1.0
         col_winner = relative_strengths < 1.0
@@ -28,12 +28,12 @@ class LanchesterSymmetricBalance(SymmetricBalance):
         return F
         
     def row_derivative(self, row_handicaps, col_handicaps):
-        row_scales = numpy.exp(row_handicaps)
-        col_scales = numpy.exp(-col_handicaps)
+        row_scales = numpy.exp(-row_handicaps)
+        col_scales = numpy.exp(col_handicaps)
         relative_strengths = row_scales[:, None] * self.initial_payoff_matrix * col_scales[None, :]
         row_winner = relative_strengths > 1.0 
-        dF = numpy.copy(relative_strengths)
-        dF[row_winner] = relative_strengths[row_winner] * relative_strengths[row_winner]
+        dF = -numpy.copy(relative_strengths)
+        dF[row_winner] = -1.0 / relative_strengths[row_winner]
         return dF
     
     def optimize(self, *args, **kwargs):
