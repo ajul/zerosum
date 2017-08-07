@@ -4,7 +4,7 @@ import warnings
 import timeit
 import zerosum.balance
 
-strategy_count = 16
+strategy_count = 64
 solver_tol = 1e-7
 solution_atol = 1e-6
 num_random_trials = 100

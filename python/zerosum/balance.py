@@ -256,6 +256,8 @@ class NonSymmetricBalance(Balance):
             fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
                 This is useful if the handicap function is known to have a degree of invariance.
                 If set to True, a strategy with maximum weight will be selected.
+        Raises:
+            ValueError if only one of row_derivative and col_derivative is provided.
         """
         self.handicap_function = handicap_function
         
@@ -291,7 +293,7 @@ class NonSymmetricBalance(Balance):
     def objective(self, handicaps):
         """
         Compute the objective vector, which is desired to be zero. 
-        This is the expected payoff of each strategy for that player, times the weight of that stategy.
+        This is the expected payoff of each strategy for that player, times the weight of that strategy.
         In order to balance them at the edge of being played, zero-weighted strategies are given a weight of 1.0. 
         This works since they do not affect the expected payoff of other strategies.
         """
@@ -595,9 +597,9 @@ class LogisticSymmetricBalance(SymmetricBalance):
         self.max_payoff = 2.0 * initial_payoff_matrix[0, 0]
         
         # Check skew-symmetry. 
-        initial_payoff_matrix_nt = self.max_payoff - initial_payoff_matrix.transpose()
-        if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_nt):
-            warnings.warn('initial_payoff_matrix is not (close to) skew-symmetric plus a constant offset.', ValueWarning)
+        initial_payoff_matrix_compliment_transpose = self.max_payoff - initial_payoff_matrix.transpose()
+        if not numpy.allclose(initial_payoff_matrix, initial_payoff_matrix_compliment_transpose):
+            warnings.warn('The difference between initial_payoff_matrix and the value of the game is not (close to) skew-symmetric.', ValueWarning)
             
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
