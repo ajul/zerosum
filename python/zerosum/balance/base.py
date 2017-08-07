@@ -436,7 +436,7 @@ class SymmetricBalance(Balance):
     
     def col_derivative(self, row_handicaps, col_handicaps):
         """ Using the skew-symmetry property. """
-        return -self.row_derivative(col_handicaps, row_handicaps)
+        return -self.row_derivative(row_handicaps, col_handicaps).transpose()
         
 class DerivativeWarning(RuntimeWarning):
     pass

@@ -34,9 +34,10 @@ class HazardSymmetricBalance(SymmetricBalance):
         relative_strengths = self.initial_payoff_matrix
         row_winner = relative_strengths > 1.0
         dF = numpy.zeros_like(relative_strengths)
-        dFr = -row_costs[:, None] / relative_strengths[row_winner]
+        dFr = -row_costs[:, None] / relative_strengths
+        dFc = -row_costs[:, None] * numpy.ones_like(relative_strengths)
         dF[row_winner] = dFr[row_winner]
-        dF[~row_winner] = -1.0
+        dF[~row_winner] = dFc[~row_winner]
         return dF
     
     def optimize(self, *args, **kwargs):
