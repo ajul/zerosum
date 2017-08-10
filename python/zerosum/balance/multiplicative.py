@@ -18,7 +18,6 @@ class MultiplicativeBalance(NonSymmetricBalance):
                 We therefore default to a reciprocal-linear rectifier.
                 
         Raises:
-            ValueError: If the size of row_weights or col_weights do not match initial_payoff_matrix.
             ValueWarning: If initial_payoff_matrix has negative elements.
         """
         self.initial_payoff_matrix = initial_payoff_matrix
@@ -33,12 +32,6 @@ class MultiplicativeBalance(NonSymmetricBalance):
     
         NonSymmetricBalance.__init__(self, row_weights = row_weights, col_weights = col_weights, 
             value = value, fix_index = fix_index)
-            
-        if initial_payoff_matrix.shape[0] != self.row_weights.size:
-            raise ValueError('The size of row_weights does not match the row count of initial_payoff_matrix.')
-        
-        if initial_payoff_matrix.shape[1] != self.col_weights.size:
-            raise ValueError('The size of col_weights does not match the column count of initial_payoff_matrix.')
             
         self.rectifier = rectifier
 

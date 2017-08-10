@@ -14,14 +14,11 @@ class LogisticBalance():
         Raises:
             ValueError: 
                 If any element of initial_payoff_matrix is not in the open interval (0, max_payoff). 
-                If the size of strategy_weights does not match the dimensions of initial_payoff_matrix.
             ValueWarning:
                 If initial_payoff_matrix is not (close to) skew-symmetric plus a constant offset.
                 If initial_payoff_matrix has elements close to 0 and/or max_payoff.
                     max_payoff is twice the value of the game.
         """
-        if initial_payoff_matrix.shape[0] != self.strategy_weights.size:
-            raise ValueError('The size of strategy_weights does not match the dimensions of initial_payoff_matrix.')
             
         # The maximum possible payoff (e.g. 100% win rate) is twice the value of the game.
         self.max_payoff = 2.0 * value
