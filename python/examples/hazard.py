@@ -18,8 +18,9 @@ data = data.transpose()
 names = ['Hammer', 'Spear', 'Curse']
 
 
-balance = zerosum.balance.HazardSymmetricBalance(data).optimize()
+balance = zerosum.balance.HazardSymmetricBalance(data)
+result = balance.optimize(check_derivative = True)
 
-print(balance)
+print(result)
 
-print(balance.handicaps / numpy.sum(balance.handicaps))
+print(result.handicaps / numpy.sum(result.handicaps))
