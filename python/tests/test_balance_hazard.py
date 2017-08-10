@@ -11,7 +11,7 @@ class TestHazardNonSymmetricBalance(tests.balance_test_base.TestInitialMatrixNon
     
     def generate_random_args(self, rows, cols):
         value = numpy.random.rand() - 0.5
-        initial_payoff_matrix = numpy.random.random((rows, cols))
+        initial_payoff_matrix = 0.1 + numpy.random.random((rows, cols))
         kwargs = {
             'initial_payoff_matrix' : initial_payoff_matrix,
         }
@@ -23,7 +23,7 @@ class TestHazardSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymmet
     
     def generate_random_args(self, rows):
         value = 0.0
-        initial_payoff_matrix = numpy.random.random((rows, rows))
+        initial_payoff_matrix = 0.1 + numpy.random.random((rows, rows))
         initial_payoff_matrix_it = 1.0 / initial_payoff_matrix.transpose()
         initial_payoff_matrix = initial_payoff_matrix * initial_payoff_matrix_it
         kwargs = {
