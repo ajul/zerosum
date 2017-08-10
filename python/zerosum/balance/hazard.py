@@ -1,5 +1,7 @@
 from .base import *
 
+# TODO: non-symmetric
+
 class HazardSymmetricBalance(SymmetricBalance):
     """
     A symmetric case appearing in:

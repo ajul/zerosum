@@ -1,5 +1,7 @@
 from .base import *
 
+# TODO: non-symmetric
+
 class LanchesterSymmetricBalance(SymmetricBalance):
     """
     A symmetric case representing Lanchester attrition. handicaps represent unit costs.
