@@ -20,9 +20,6 @@ class LogisticBalance():
                     max_payoff is twice the value of the game.
         """
             
-        # The maximum possible payoff (e.g. 100% win rate) is twice the value of the game.
-        self.max_payoff = 2.0 * value
-            
         # Check bounds.
         if numpy.any(initial_payoff_matrix <= 0.0) or numpy.any(initial_payoff_matrix >= self.max_payoff):
             raise ValueError('initial_payoff_matrix has element(s) not in the open interval (0, max_payoff), where max_payoff = %f is twice the value of the game.' % self.max_payoff)
@@ -47,7 +44,7 @@ class LogisticBalance():
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
     #TODO: Finish and test this.
-    def __init__(self, initial_payoff_matrix, value, row_weights = None, col_weights = None, fix_index = True):
+    def __init__(self, initial_payoff_matrix, value, max_payoff, row_weights = None, col_weights = None, fix_index = True):
         """
         Args:
             initial_payoff_matrix: The elements of initial_payoff_matrix must be in (0, max_payoff), 
@@ -68,6 +65,8 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         """
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
+        
+        self.max_payoff = max_payoff
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
         LogisticBalance.__init__(self, initial_payoff_matrix, value)
@@ -117,6 +116,9 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
             raise ValueError('initial_payoff_matrix is not square.')
         
         value = initial_payoff_matrix[0, 0]
+        
+        # The maximum possible payoff (e.g. 100% win rate) is twice the value of the game.
+        self.max_payoff = 2.0 * value
         
         SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
         LogisticBalance.__init__(self, initial_payoff_matrix, value)
