@@ -25,7 +25,7 @@ class TestLogisticSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymm
     def generate_random_args(self, rows):
         value = 1.0 + numpy.random.rand()
         initial_payoff_matrix = numpy.random.random((rows, rows))
-        initial_payoff_matrix_nt = 1.0 - initial_payoff_matrix
+        initial_payoff_matrix_nt = 1.0 - initial_payoff_matrix.transpose()
         initial_payoff_matrix = value * (initial_payoff_matrix + initial_payoff_matrix_nt)
         kwargs = {
             'initial_payoff_matrix' : initial_payoff_matrix,

@@ -24,6 +24,8 @@ class TestHazardSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymmet
     def generate_random_args(self, rows):
         value = 0.0
         initial_payoff_matrix = numpy.random.random((rows, rows))
+        initial_payoff_matrix_it = 1.0 / initial_payoff_matrix.transpose()
+        initial_payoff_matrix = initial_payoff_matrix * initial_payoff_matrix_it
         kwargs = {
             'initial_payoff_matrix' : initial_payoff_matrix,
         }
