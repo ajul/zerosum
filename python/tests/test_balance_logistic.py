@@ -3,9 +3,9 @@ import unittest
 import warnings
 import timeit
 import zerosum.balance
-import tests.balance_base
+import tests.balance_test_base
 
-class TestLogisticSymmetricBalance(tests.balance_base.TestInitialMatrixSymmetricBalanceBase):
+class TestLogisticSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymmetricBalanceBase):
     class_to_test = zerosum.balance.LogisticSymmetricBalance
     
     def generate_random_data(self, rows):
