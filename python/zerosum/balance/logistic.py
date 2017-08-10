@@ -10,14 +10,16 @@ class LogisticBalance():
     
     def __init__(self, initial_payoff_matrix, value):
         """
-        Sets self.initial_payoff_matrix and self.max_payoff.
+        Sets self.initial_payoff_matrix.
+        Args:
+            initial_payoff_matrix
+            value
         Raises:
             ValueError: 
                 If any element of initial_payoff_matrix is not in the open interval (0, max_payoff). 
             ValueWarning:
                 If initial_payoff_matrix is not (close to) skew-symmetric plus a constant offset.
                 If initial_payoff_matrix has elements close to 0 and/or max_payoff.
-                    max_payoff is twice the value of the game.
         """
             
         # Check bounds.
@@ -43,7 +45,6 @@ class LogisticBalance():
         return 0.25 - payoffs * payoffs
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
-    #TODO: Finish and test this.
     def __init__(self, initial_payoff_matrix, value, max_payoff, row_weights = None, col_weights = None, fix_index = True):
         """
         Args:
@@ -67,8 +68,9 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
         
         self.max_payoff = max_payoff
+        normalized_value = value / max_payoff - 0.5
         
-        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
+        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value, fix_index = fix_index)
         LogisticBalance.__init__(self, initial_payoff_matrix, value)
         
     def optimize(self, *args, **kwargs):
