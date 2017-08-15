@@ -3,9 +3,9 @@ import unittest
 import warnings
 import timeit
 import zerosum.balance
-import tests.balance_test_base
+import tests.common
 
-class TestLogisticNonSymmetricBalance(tests.balance_test_base.TestInitialMatrixNonSymmetricBalanceBase):
+class TestLogisticNonSymmetricBalance(tests.common.TestInitialMatrixNonSymmetricBalanceBase):
     class_to_test = zerosum.balance.LogisticNonSymmetricBalance
     
     def generate_random_args(self, rows, cols):
@@ -19,7 +19,7 @@ class TestLogisticNonSymmetricBalance(tests.balance_test_base.TestInitialMatrixN
         }
         return kwargs, value
 
-class TestLogisticSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymmetricBalanceBase):
+class TestLogisticSymmetricBalance(tests.common.TestInitialMatrixSymmetricBalanceBase):
     class_to_test = zerosum.balance.LogisticSymmetricBalance
     
     def generate_random_args(self, rows):

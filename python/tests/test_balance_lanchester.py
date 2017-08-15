@@ -3,10 +3,10 @@ import unittest
 import warnings
 import timeit
 import zerosum.balance
-import tests.balance_test_base
+import tests.common
 
 """
-class TestLanchesterNonSymmetricBalance(tests.balance_test_base.TestInitialMatrixNonSymmetricBalanceBase):
+class TestLanchesterNonSymmetricBalance(tests.common.TestInitialMatrixNonSymmetricBalanceBase):
     class_to_test = zerosum.balance.LanchesterNonSymmetricBalance
     
     def generate_random_args(self, rows, cols):
@@ -18,7 +18,7 @@ class TestLanchesterNonSymmetricBalance(tests.balance_test_base.TestInitialMatri
         return kwargs, value
 """
 
-class TestLanchesterSymmetricBalance(tests.balance_test_base.TestInitialMatrixSymmetricBalanceBase):
+class TestLanchesterSymmetricBalance(tests.common.TestInitialMatrixSymmetricBalanceBase):
     class_to_test = zerosum.balance.LanchesterSymmetricBalance
     
     def generate_random_args(self, rows):

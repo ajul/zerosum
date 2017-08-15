@@ -3,9 +3,9 @@ import unittest
 import warnings
 import timeit
 import zerosum.balance
-import tests.balance_test_base
+import tests.common
 
-class TestMultiplicativeBalance(tests.balance_test_base.TestInitialMatrixNonSymmetricBalanceBase):
+class TestMultiplicativeBalance(tests.common.TestInitialMatrixNonSymmetricBalanceBase):
     class_to_test = zerosum.balance.MultiplicativeBalance
     
     def generate_random_args(self, rows, cols):
