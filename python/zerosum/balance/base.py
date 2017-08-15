@@ -119,7 +119,7 @@ class Balance():
             numpy.max(numpy.abs(result)))
         return result
     
-    def optimize_common(self, x0 = None, check_derivative = False, check_jacobian = False, *args, **kwargs):
+    def optimize_common(self, x0 = None, method = 'lm', check_derivative = False, check_jacobian = False, *args, **kwargs):
         """
         Common optimization code.
         
@@ -175,7 +175,7 @@ class Balance():
         else:
             jac = None
         
-        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, *args, **kwargs)
+        result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, method = method, *args, **kwargs)
         
         result.handicaps = result.x
         if self.fix_index is not None:

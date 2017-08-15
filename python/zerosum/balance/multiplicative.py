@@ -44,13 +44,9 @@ class MultiplicativeBalance(NonSymmetricBalance):
     def col_derivative(self, row_handicaps, col_handicaps):
         return self.initial_payoff_matrix * self.rectifier.derivative(col_handicaps)[None, :] * self.rectifier.evaluate(-row_handicaps)[:, None]
     
-    def optimize(self, method = 'lm', *args, **kwargs):
+    def optimize(self, *args, **kwargs):
         """
         Compute the handicaps that balance the game using scipy.optimize.root.
-        
-        Args:
-            method: Used by scipy.optimize.root. 
-                For this case we default to method 'lm' since it seems to produce more accurate results.
         
         Returns:
             The result of scipy.optimize.root, as with NonSymmetricBalance.
