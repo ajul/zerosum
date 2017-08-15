@@ -48,6 +48,7 @@ class TestInitialMatrixNonSymmetricBalanceBase(unittest.TestCase):
         for i in range(num_random_trials):
             kwargs, value = self.generate_random_args(strategy_count, strategy_count + 1)
             result = self.class_to_test(**kwargs).optimize(tol = solver_tol)
+            self.assertTrue(result.success)
             numpy.testing.assert_allclose(numpy.average(result.F, axis = 0), value, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, axis = 1), value, atol = solution_atol)
         
@@ -57,6 +58,7 @@ class TestInitialMatrixNonSymmetricBalanceBase(unittest.TestCase):
             col_weights = random_weights(strategy_count + 1)
             kwargs, value = self.generate_random_args(strategy_count, strategy_count + 1)
             result = self.class_to_test(row_weights = row_weights, col_weights = col_weights, **kwargs).optimize(tol = solver_tol)
+            self.assertTrue(result.success)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
         
@@ -66,6 +68,7 @@ class TestInitialMatrixNonSymmetricBalanceBase(unittest.TestCase):
             col_weights = random_weights_with_zeros(strategy_count + 1)
             kwargs, value = self.generate_random_args(strategy_count, strategy_count + 1)
             result = self.class_to_test(row_weights = row_weights, col_weights = col_weights, **kwargs).optimize(tol = solver_tol)
+            self.assertTrue(result.success)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
             numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
 
@@ -96,7 +99,7 @@ class TestInitialMatrixSymmetricBalanceBase(unittest.TestCase):
     def test_random_unweighted(self):
         for i in range(num_random_trials):
             kwargs, value = self.generate_random_args(strategy_count)
-            balance = self.class_to_test( **kwargs)
+            balance = self.class_to_test(**kwargs)
             result = balance.optimize(tol = solver_tol)
             self.assertTrue(result.success)
             numpy.testing.assert_allclose(numpy.average(result.F, axis = 0), value, atol = solution_atol)
