@@ -38,10 +38,15 @@ class HazardBalance():
         return dF
 
 class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
-    def __init__(self, initial_payoff_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = True,
+    def __init__(self, initial_payoff_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = None,
         rectifier = zerosum.function.ReciprocalLinearRectifier()):
         if row_weights is None: row_weights = initial_payoff_matrix.shape[0]
         if col_weights is None: col_weights = initial_payoff_matrix.shape[1]
+        
+        # We fix an index only if the desired value is zero.
+        # A global scale might be required to achieve other values.
+        if fix_index is None:
+            fix_index = (value == 0.0)   
         
         HazardBalance.__init__(self)
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)

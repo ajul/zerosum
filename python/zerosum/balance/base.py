@@ -143,7 +143,7 @@ class Balance():
             x0 = numpy.zeros((self.handicap_count))
         
         # Keep the initial handicap of fix_index.
-        if self.fix_index is not None:
+        if self.fix_index is not False:
             if x0.size == self.handicap_count:
                 fix_handicap = x0[self.fix_index]
                 x0 = numpy.delete(x0, self.fix_index)
@@ -151,7 +151,7 @@ class Balance():
                 fix_handicap = 0.0
         
         def fun(x):
-            if self.fix_index is not None:
+            if self.fix_index is not False:
                 x = numpy.insert(x, self.fix_index, fix_handicap)
             if check_derivative is not False:
                 self.check_row_derivative(x, epsilon = check_derivative)
@@ -159,16 +159,16 @@ class Balance():
             if check_jacobian is not False: 
                 self.check_jacobian(x, epsilon = check_jacobian)
             y = self.objective(x)
-            if self.fix_index is not None:
+            if self.fix_index is not False:
                 y = numpy.delete(y, self.fix_index)
             return y
     
         if self.has_derivative():
             def jac(x):
-                if self.fix_index is not None:
+                if self.fix_index is not False:
                     x = numpy.insert(x, self.fix_index, fix_handicap)
                 J = self.jacobian(x)
-                if self.fix_index is not None:
+                if self.fix_index is not False:
                     J = numpy.delete(J, self.fix_index, axis = 0)
                     J = numpy.delete(J, self.fix_index, axis = 1)
                 return J
@@ -178,7 +178,7 @@ class Balance():
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, method = method, *args, **kwargs)
         
         result.handicaps = result.x
-        if self.fix_index is not None:
+        if self.fix_index is not False:
             result.handicaps = numpy.insert(result.handicaps, self.fix_index, fix_handicap)
         
         result.F = self.evaluate_payoff_matrix(result.handicaps)
@@ -221,7 +221,7 @@ class NonSymmetricBalance(Balance):
     This version of Balance for non-symmetric games, where each player is choosing
     from an independent set of strategies.
     """
-    def __init__(self, row_weights, col_weights, value = 0.0, fix_index = None):
+    def __init__(self, row_weights, col_weights, value = 0.0, fix_index = False):
         """
         Args:
             row_weights, col_weights: Defines the desired Nash equilibrium 
@@ -233,6 +233,7 @@ class NonSymmetricBalance(Balance):
             fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
                 This is useful if the handicap function is known to have a degree of invariance.
                 If set to True, a strategy with maximum weight will be selected.
+                The value None is reserved for subclasses to implement their own default fix_index.
         Raises:
             ValueError if only one of row_derivative and col_derivative is provided.
         """
@@ -248,7 +249,7 @@ class NonSymmetricBalance(Balance):
         if fix_index is True:
             # Select the first nonzero weight.
             fix_index = numpy.argmax(weights)
-        elif fix_index is not None:
+        elif fix_index is not False:
             if weights[fix_index] == 0.0:
                 warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
@@ -337,7 +338,7 @@ class NonSymmetricBalance(Balance):
         return result
 
 class SymmetricBalance(Balance):
-    def __init__(self, strategy_weights, row_derivative = None, value = None, fix_index = None):
+    def __init__(self, strategy_weights, row_derivative = None, value = None, fix_index = False):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
@@ -352,6 +353,7 @@ class SymmetricBalance(Balance):
             fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
                 This is useful if the handicap function is known to have a degree of invariance.
                 If set to True, a strategy with maximum weight will be selected.
+                The value None is reserved for subclasses to implement their own default fix_index.
         """
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
@@ -362,7 +364,7 @@ class SymmetricBalance(Balance):
         if fix_index is True:
             # Select the maximum weight.
             fix_index = numpy.argmax(self.strategy_weights)
-        elif fix_index is not None:
+        elif fix_index is not False:
             if self.strategy_weights[fix_index] == 0.0:
                 warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
