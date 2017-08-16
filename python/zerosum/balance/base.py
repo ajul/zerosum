@@ -114,11 +114,11 @@ class Balance():
             def jac(x):
                 handicaps = x_to_handicaps(self, x)
                 J = self.jacobian(handicaps)
-                if self.rectifier is not None:
-                    J = J * self.rectifier.derivative(handicaps)[None, :]
                 if self.fix_index is not False:
                     J = numpy.delete(J, self.fix_index, axis = 0)
                     J = numpy.delete(J, self.fix_index, axis = 1)
+                if self.rectifier is not None:
+                    J = J * self.rectifier.derivative(x)[None, :]
                 return J
         else:
             jac = None
