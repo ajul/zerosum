@@ -11,11 +11,11 @@ class TestLogisticNonSymmetricBalance(tests.common.TestInitialMatrixNonSymmetric
     def generate_random_args(self, rows, cols):
         max_payoff = 1.0 + numpy.random.rand()
         value = max_payoff * (0.25 + 0.5 * numpy.random.rand())
-        initial_payoff_matrix = max_payoff * (0.1 + 0.8 * numpy.random.random((rows, cols)))
+        base_matrix = max_payoff * (0.1 + 0.8 * numpy.random.random((rows, cols)))
         kwargs = {
             'value' : value,
             'max_payoff': max_payoff,
-            'initial_payoff_matrix' : initial_payoff_matrix,
+            'base_matrix' : base_matrix,
         }
         return kwargs, value
 
@@ -24,11 +24,11 @@ class TestLogisticSymmetricBalance(tests.common.TestInitialMatrixSymmetricBalanc
     
     def generate_random_args(self, rows):
         value = 1.0 + numpy.random.rand()
-        initial_payoff_matrix = numpy.random.random((rows, rows))
-        initial_payoff_matrix_nt = 1.0 - initial_payoff_matrix.transpose()
-        initial_payoff_matrix = value * (initial_payoff_matrix + initial_payoff_matrix_nt)
+        base_matrix = numpy.random.random((rows, rows))
+        base_matrix_nt = 1.0 - base_matrix.transpose()
+        base_matrix = value * (base_matrix + base_matrix_nt)
         kwargs = {
-            'initial_payoff_matrix' : initial_payoff_matrix,
+            'base_matrix' : base_matrix,
         }
         return kwargs, value
 

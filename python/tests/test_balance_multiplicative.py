@@ -10,14 +10,14 @@ class TestMultiplicativeBalance(tests.common.TestInitialMatrixNonSymmetricBalanc
     
     def generate_random_args(self, rows, cols):
         value = numpy.random.rand() + 1.0
-        initial_payoff_matrix = numpy.random.random((rows, cols))
+        base_matrix = numpy.random.random((rows, cols))
         kwargs = {
             'value' : value,
-            'initial_payoff_matrix' : initial_payoff_matrix,
+            'base_matrix' : base_matrix,
         }
         return kwargs, value
     
     def test_negative_matrix_warning(self):
         data = -numpy.ones((2, 2))
-        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'initial_payoff_matrix.*negative'):
+        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'base_matrix.*negative'):
             zerosum.balance.MultiplicativeBalance(data)
