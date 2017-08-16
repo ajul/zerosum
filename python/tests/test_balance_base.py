@@ -30,3 +30,4 @@ class TestSymmetricBalance(unittest.TestCase):
             strategy_weights = numpy.array([0.0, 1.0])
             zerosum.balance.base.SymmetricBalance(strategy_weights = strategy_weights, fix_index = 0)
 
+# TODO: add input checking tests
