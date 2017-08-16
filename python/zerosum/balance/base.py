@@ -336,6 +336,8 @@ class SymmetricBalance(Balance):
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
         self.col_count = self.handicap_count
+        self.row_weights = self.strategy_weights
+        self.col_weights = self.strategy_weights
             
         self.value = value
         

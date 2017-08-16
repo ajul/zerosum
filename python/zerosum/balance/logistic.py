@@ -1,4 +1,5 @@
 from .base import *
+from .input_checks import *
 
 class LogisticBalance():
     """
@@ -30,6 +31,8 @@ class LogisticBalance():
             
         self.base_matrix = base_matrix
         self.initial_offset_matrix = numpy.log(self.max_payoff / base_matrix - 1.0)
+        
+        check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
     def handicap_function(self, row_handicaps, col_handicaps):
         # Normalized to the range (-0.5, 0.5).
@@ -114,21 +117,17 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
                     max_payoff is twice the value of the game.
         """
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
-        if base_matrix.shape[0] != base_matrix.shape[1]:
-            raise ValueError('base_matrix is not square.')
         
         value = base_matrix[0, 0]
         
+        check_square(base_matrix)
+        check_skew_symmetry(base_matrix, value)
+        
         # The maximum possible payoff (e.g. 100% win rate) is twice the value of the game.
         self.max_payoff = 2.0 * value
-        
+            
         SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
         LogisticBalance.__init__(self, base_matrix, value)
-        
-        # Check skew-symmetry. 
-        base_matrix_compliment_transpose = self.max_payoff - self.base_matrix.transpose()
-        if not numpy.allclose(base_matrix, base_matrix_compliment_transpose):
-            warnings.warn('The difference between base_matrix and the value of the game is not (close to) skew-symmetric.', ValueWarning)
         
     def optimize(self, *args, **kwargs):
         """

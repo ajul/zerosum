@@ -1,4 +1,5 @@
 from .base import *
+from .input_checks import *
 
 class MultiplicativeBalance(NonSymmetricBalance):
     """
@@ -31,6 +32,8 @@ class MultiplicativeBalance(NonSymmetricBalance):
     
         NonSymmetricBalance.__init__(self, row_weights = row_weights, col_weights = col_weights, 
             value = value, fix_index = fix_index)
+            
+        check_shape(self.base_matrix, self.row_weights, self.col_weights)
 
     def handicap_function(self, row_handicaps, col_handicaps):
         return self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]

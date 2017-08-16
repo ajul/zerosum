@@ -1,7 +1,12 @@
 from .base import *
+from .input_checks import *
 
 class LanchesterBalance():
     rectifier = zerosum.function.ReciprocalLinearRectifier()
+    
+    def __init__(self, base_matrix):
+        self.base_matrix = base_matrix
+        check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
     def handicap_function(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
@@ -38,10 +43,8 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
         
-        LanchesterBalance.__init__(self)
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
-
-        self.base_matrix = base_matrix
+        LanchesterBalance.__init__(self, base_matrix)
 
 class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
     """
@@ -53,9 +56,9 @@ class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         if base_matrix.shape[0] != base_matrix.shape[1]:
             raise ValueError('base_matrix is not square.')
-        
-        LanchesterBalance.__init__(self)
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
 
-        self.base_matrix = base_matrix
-        # TODO: check symmetry
+        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        LanchesterBalance.__init__(self, base_matrix)
+        
+        check_square(base_matrix)
+        check_log_skew_symmetry(base_matrix)
