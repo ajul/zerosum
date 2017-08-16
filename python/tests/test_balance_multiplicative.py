@@ -16,8 +16,3 @@ class TestMultiplicativeBalance(tests.common.TestInitialMatrixNonSymmetricBalanc
             'base_matrix' : base_matrix,
         }
         return kwargs, value
-    
-    def test_negative_matrix_warning(self):
-        data = -numpy.ones((2, 2))
-        with self.assertRaisesRegex(ValueError, 'base_matrix.*negative'):
-            zerosum.balance.MultiplicativeBalance(data)

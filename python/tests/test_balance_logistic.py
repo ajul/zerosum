@@ -31,16 +31,6 @@ class TestLogisticSymmetricBalance(tests.common.TestInitialMatrixSymmetricBalanc
             'base_matrix' : base_matrix,
         }
         return kwargs, value
-
-    def test_non_skew_symmetric_warning(self):
-        data = numpy.eye(2) + 0.5
-        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'skew-symmetric'):
-            zerosum.balance.LogisticSymmetricBalance(data)
-            
-    def test_nonsquare_error(self):
-        data = numpy.ones((2, 3))
-        with self.assertRaisesRegex(ValueError, 'square'):
-            zerosum.balance.LogisticSymmetricBalance(data)
             
     def test_saturation_error(self):
         data = numpy.array([[0.5, 1.0], 

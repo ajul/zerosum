@@ -20,12 +20,12 @@ def check_non_negative(base_matrix):
     if numpy.any(base_matrix < 0.0):
         raise ValueError('base_matrix has negative value(s).')
         
-def check_skew_symmetry(base_matrix, base = 0.0):
-    base_matrix_compliment_transpose = 2.0 * base - base_matrix.transpose()
+def check_skew_symmetry(base_matrix, neutral_value = 0.0):
+    base_matrix_compliment_transpose = 2.0 * neutral_value - base_matrix.transpose()
     if not numpy.allclose(base_matrix, base_matrix_compliment_transpose):
-        warnings.warn('base_matrix is not (close to) skew-symmetric.', ValueWarning)
+        warnings.warn('base_matrix is not (close to) skew-symmetric relative to neutral value of %f.' % neutral_value, ValueWarning)
     
-def check_log_skew_symmetry(base_matrix, base = 1.0):
-    base_matrix_reciprocal_transpose = base / base_matrix.transpose()
+def check_log_skew_symmetry(base_matrix, neutral_value = 1.0):
+    base_matrix_reciprocal_transpose = neutral_value / base_matrix.transpose()
     if not numpy.allclose(base_matrix, base_matrix_reciprocal_transpose):
-        warnings.warn('base_matrix is not (close to) log-skew-symmetric.', ValueWarning)
+        warnings.warn('base_matrix is not (close to) log-skew-symmetric relative to neutral value of %f.' % neutral_value, ValueWarning)
