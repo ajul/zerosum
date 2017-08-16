@@ -9,12 +9,11 @@ class LogisticBalance():
     Commonly payoffs represent win rates.
     """
     
-    def __init__(self, base_matrix, value):
+    def __init__(self, base_matrix):
         """
         Sets self.base_matrix.
         Args:
             base_matrix
-            value
         Raises:
             ValueError: 
                 If any element of base_matrix is not in the open interval (0, max_payoff). 
@@ -74,7 +73,7 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         normalized_value = value / max_payoff - 0.5
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value, fix_index = fix_index)
-        LogisticBalance.__init__(self, base_matrix, value)
+        LogisticBalance.__init__(self, base_matrix)
         
     def optimize(self, *args, **kwargs):
         """
@@ -127,7 +126,7 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
         self.max_payoff = 2.0 * value
             
         SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
-        LogisticBalance.__init__(self, base_matrix, value)
+        LogisticBalance.__init__(self, base_matrix)
         
     def optimize(self, *args, **kwargs):
         """
