@@ -2,6 +2,14 @@ from .base import *
 from .input_checks import *
 
 class LanchesterBalance():
+    """
+    A handicap function based on Lanchester attrition. 
+    Handicaps represent unit costs, with each side having the same "budget",
+    so a higher cost means a smaller force.
+    The payoff magnitude is the proportion of the winning side remaining 
+    after the losing side has been eliminated, with the sign favoring the winning side,
+    i.e. positive = row player.
+    """
     rectifier = zerosum.function.ReciprocalLinearRectifier()
     
     def __init__(self, base_matrix):
@@ -35,11 +43,6 @@ class LanchesterBalance():
         return dF
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
-    """
-    A symmetric case representing Lanchester attrition. handicaps represent unit costs.
-    payoff is proportion of remaining force as t -> infinity, with the sign
-    favoring the winning side.
-    """
     def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = True):
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
@@ -48,11 +51,6 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
         LanchesterBalance.__init__(self, base_matrix)
 
 class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
-    """
-    A symmetric case representing Lanchester attrition. handicaps represent unit costs.
-    payoff is proportion of remaining force as t -> infinity, with the sign
-    favoring the winning side.
-    """
     def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         

@@ -2,18 +2,28 @@ import numpy
 import scipy.optimize
 
 def nash(payoff_matrix, *args, **kwargs):
-    # Returns the scipy.optimize.linprog result of finding the Nash equilbrium for a zero-sum game.
+    """
+    Finds the Nash equilbrium for a zero-sum game.
     
-    # payoff_matrix is a 2-D array describing the payoffs for the row player (maximizer).
-    # *args, **kwargs are passed to scipy.optimize.linprog.
+    Args:
+        payoff_matrix: A 2-D array describing the payoffs for the row player (maximizer).
+        *args, **kwargs: Passed to scipy.optimize.linprog.
     
-    # Each result.strategy is the weights of a mixed Nash equilibrium.
-    # Each result.value is the expected payoff for that player, i.e. row_result.value = -col_result.value (to machine precision)
+    Returns:
+        The scipy.optimize.linprog results of finding the Nash equilibrium for the row player and the column player.
+            result.strategy is the weights of a mixed Nash equilibrium.
+            result.value is the expected payoff for that player, i.e. row_result.value = -col_result.value (to machine precision)
+    """
     row_result = nash_row(payoff_matrix, *args, **kwargs)
     col_result = nash_row(-payoff_matrix.transpose(), *args, **kwargs)
     return row_result, col_result
 
 def nash_row(payoff_matrix, *args, **kwargs):
+    """
+    Helper method for finding the Nash equilbrium for a zero-sum game.
+    Finds the Nash equilbrium for the row player only.
+    """
+
     # Nash equilibrium for the row player (maximizer).
     row_count, col_count = payoff_matrix.shape
     

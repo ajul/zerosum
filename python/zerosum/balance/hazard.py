@@ -2,6 +2,18 @@ from .base import *
 from .input_checks import *
 
 class HazardBalance():
+    """
+    Handicap function taken from 
+    Hazard, C. J. 2010. What every game designer should know about game theory. Triangle Game Conference. Raleigh, North Carolina.
+    
+    This is similar to the Lanchester (linear) law, with two sides fighting until one is eliminated.
+    However, the effect of the handicap (cost) is different:
+    instead of each side being able to afford a quantity of units inversely proportional to cost,
+    each side gets one unit, and payoff is cost of damage dealt minus cost of damage received.
+    The handicaps thus do not affect which side wins, or by how much, but rather the cost of doing so.
+    
+    The original example was symmetric, but it can work in the non-symmetric case as well.
+    """
     rectifier = zerosum.function.ReciprocalLinearRectifier()
     
     def __init__(self, base_matrix):
@@ -53,12 +65,6 @@ class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
         HazardBalance.__init__(self, base_matrix)
         
 class HazardSymmetricBalance(HazardBalance,SymmetricBalance):
-    """
-    A symmetric case appearing in:
-    Hazard, C. J. 2010. What every game designer should know about game theory. Triangle Game Conference. Raleigh, North Carolina.
-    
-    Similar but not the same as the Lanchester.
-    """
     def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         
