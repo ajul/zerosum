@@ -24,8 +24,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
         
-        if numpy.any(base_matrix < 0.0):
-            warnings.warn('base_matrix has negative element(s).', ValueWarning)
+        check_non_negative(base_matrix)
             
         if value <= 0.0:
             warnings.warn('Value %f is non-positive.' % value, ValueWarning)

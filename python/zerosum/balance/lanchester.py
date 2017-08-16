@@ -6,6 +6,7 @@ class LanchesterBalance():
     
     def __init__(self, base_matrix):
         self.base_matrix = base_matrix
+        check_non_negative(self.base_matrix)
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
     def handicap_function(self, row_handicaps, col_handicaps):
@@ -54,11 +55,9 @@ class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
     """
     def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
-        if base_matrix.shape[0] != base_matrix.shape[1]:
-            raise ValueError('base_matrix is not square.')
-
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
-        LanchesterBalance.__init__(self, base_matrix)
         
         check_square(base_matrix)
         check_log_skew_symmetry(base_matrix)
+
+        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        LanchesterBalance.__init__(self, base_matrix)

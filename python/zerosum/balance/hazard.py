@@ -6,6 +6,7 @@ class HazardBalance():
     
     def __init__(self, base_matrix):
         self.base_matrix = base_matrix
+        check_non_negative(self.base_matrix)
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
     def handicap_function(self, row_handicaps, col_handicaps):
@@ -46,9 +47,7 @@ class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
         # We fix an index only if the desired value is zero.
         # A global scale might be required to achieve other values.
         if fix_index is None:
-            fix_index = (value == 0.0)   
-            
-        
+            fix_index = (value == 0.0)
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
         HazardBalance.__init__(self, base_matrix)
@@ -63,9 +62,8 @@ class HazardSymmetricBalance(HazardBalance,SymmetricBalance):
     def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
-        HazardBalance.__init__(self, base_matrix)
-        
         check_square(base_matrix)
         check_log_skew_symmetry(base_matrix)
-    
+        
+        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        HazardBalance.__init__(self, base_matrix)
