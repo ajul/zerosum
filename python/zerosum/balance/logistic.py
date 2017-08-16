@@ -54,7 +54,7 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
                 where max_payoff is twice the value of the game.
                 The base_matrix should be skew-symmetric plus a constant offset (namely the value of the game).
                 In particular, all diagonal elements should be equal to the value of the game.
-            strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
+            row_weights, col_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
             fix_index: Since this handicap function is invariant with respect to a global offset, we default to True.
         Raises:
