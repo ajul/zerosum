@@ -7,6 +7,9 @@ class LogisticBalance():
     whose argument is row_handicap - col_handicap + offset, 
     where offset is chosen so that when all handicaps are zero the base_matrix is recovered.
     Commonly payoffs represent win rates.
+    
+    The optimization is done over the canonical range (-0.5, 0.5). 
+    The input is shifted from (0, max_payoff) to this range, and then decanonicalized at the end.
     """
     
     def __init__(self, base_matrix):
@@ -34,8 +37,6 @@ class LogisticBalance():
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
     def handicap_function(self, row_handicaps, col_handicaps):
-        # Normalized to the range (-0.5, 0.5).
-        # This seems to perform better than using the original range.
         return 1.0 / (1.0 + numpy.exp(row_handicaps[:, None] - col_handicaps[None, :] + self.initial_offset_matrix)) - 0.5
         
     def row_derivative(self, row_handicaps, col_handicaps):
@@ -45,6 +46,12 @@ class LogisticBalance():
     def col_derivative(self, row_handicaps, col_handicaps):
         payoffs = self.handicap_function(row_handicaps, col_handicaps)
         return 0.25 - payoffs * payoffs
+        
+    def decanonicalize(self, handicaps_canonical, F_canonical):
+        """ Expands F back to the original range (0, max_payoff). """
+        F = (F_canonical + 0.5) * self.max_payoff
+        
+        return handicaps_canonical, F
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
     def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None, fix_index = True):
@@ -74,22 +81,6 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value, fix_index = fix_index)
         LogisticBalance.__init__(self, base_matrix)
-        
-    def optimize(self, *args, **kwargs):
-        """
-        Compute the handicaps that balance the game using scipy.optimize.root.
-        
-        Args:
-            As NonSymmetricBalance.optimize().
-        
-        Returns:
-            As NonSymmetricBalance.optimize().
-            result.F is scaled to the original range (0, max_payoff).
-        """
-        result = NonSymmetricBalance.optimize(self, *args, **kwargs)
-        # Expand F back to the original range (0, max_payoff).
-        result.F = (result.F + 0.5) * self.max_payoff
-        return result
 
 class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
     """
@@ -127,19 +118,3 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
             
         SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
         LogisticBalance.__init__(self, base_matrix)
-        
-    def optimize(self, *args, **kwargs):
-        """
-        Compute the handicaps that balance the game using scipy.optimize.root.
-        
-        Args:
-            As SymmetricBalance.optimize().
-        
-        Returns:
-            As SymmetricBalance.optimize().
-            result.F is scaled to the original range (0, max_payoff).
-        """
-        result = SymmetricBalance.optimize(self, *args, **kwargs)
-        # Expand F back to the original range (0, max_payoff).
-        result.F = (result.F + 0.5) * self.max_payoff
-        return result

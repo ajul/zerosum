@@ -28,20 +28,21 @@ class Balance():
     
     def handicap_function(self, row_handicaps, col_handicaps):
         """
-            Args:
-                row_handicaps, col_handicaps 
-            Returns:
-                The payoff matrix.
-                Each element of the payoff matrix should depend only on the corresponding row and column handicap.
-                It is highly desirable that the function be strictly monotonically decreasing 
-                in row_handicap and strictly monotonically increasing in col_handicap for every element. 
-                NOTE: In the symmetric case the function should also have the property that 
-                handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
-                where the value of the game is constant.
-                This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
-                In particular, all diagonal elements should be equal to the value of the game.
+        Args:
+            row_handicaps, col_handicaps 
+        Returns:
+            The payoff matrix.
+            Each element of the payoff matrix should depend only on the corresponding row and column handicap.
+            It is highly desirable that the function be strictly monotonically decreasing 
+            in row_handicap and strictly monotonically increasing in col_handicap for every element. 
+            NOTE: In the symmetric case the function should also have the property that 
+            handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
+            where the value of the game is constant.
+            This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
+            In particular, all diagonal elements should be equal to the value of the game.
         """
         raise NotImplementedError
+
             
     # Optional: implement the following methods in subclasses:
     #def row_derivative(self, row_handicaps, col_handicaps):
@@ -50,15 +51,34 @@ class Balance():
     #def col_derivative(self, row_handicaps, col_handicaps):
         """Returns: the derivative of the payoff matrix with respect to the column handicaps."""
     
+    def decanonicalize(self, handicaps_canonical, F_canonical):
+        """
+        In some cases the problem may be transformed into some canonical form before solving it.
+        Subclasses implement this method to transform the result back into a form corresponding to the problem statement.
+        This may modify result.F and/or result.handicap.
+        
+        Args:
+            handicaps_canonical
+            F_canonical
+        Returns:
+            handicaps
+            F
+        """
+        return handicaps_canonical, F_canonical
+    
     """
     Common methods.
     """
     
     def optimize(self, x0 = None, method = 'lm', check_derivative = False, check_jacobian = False, *args, **kwargs):
         """
-        
+        Solves the balance problem using scipy.optimize.root.
         Args:
             x0: Starting point of the optimization. Defaults to a zero vector.
+            method: Optimization method to be used by scipy.optimize.root. 
+                We default to 'lm' since it seems to produce the best results empirically.
+            decanonicalize: 
+                If set to True, self.decanonicalize(result) will be called before the return.
             check_derivative, check_jacobian:
                 Can be used to check the provided row_derivative, col_derivative 
                 against a finite difference approximation with the provided epsilon.
@@ -125,9 +145,12 @@ class Balance():
         
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, method = method, *args, **kwargs)
         
-        result.handicaps = x_to_handicaps(self, result.x)
+        result.handicaps_canonical = x_to_handicaps(self, result.x)
+        result.row_handicaps_canonical, result.col_handicaps_canonical = self.split_handicaps(result.handicaps_canonical)
+        result.F_canonical = self.handicap_function(result.row_handicaps_canonical, result.col_handicaps_canonical)
+        
+        result.handicaps, result.F = self.decanonicalize(result.handicaps_canonical, result.F_canonical)
         result.row_handicaps, result.col_handicaps = self.split_handicaps(result.handicaps)
-        result.F = self.handicap_function(result.row_handicaps, result.col_handicaps)
         
         return result
         
@@ -137,6 +160,10 @@ class Balance():
             return True
         except AttributeError:
             return False
+    
+    """
+    Methods for checking derivatives and Jacobians.
+    """
     
     def jacobian_fd(self, epsilon = None):
         """ Computes a finite (central) difference approximation of the Jacobian. """

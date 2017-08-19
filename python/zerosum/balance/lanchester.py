@@ -9,6 +9,10 @@ class LanchesterBalance():
     The payoff magnitude is the proportion of the winning side remaining 
     after the losing side has been eliminated, with the sign corresponding to the winning side,
     i.e. positive = row player.
+    
+    The optimization is done with a canonical Lanchester exponent of 1, 
+    corresponding to Lanchester's linear law.
+    The resulting handicaps are then raised to 1 / exponent.
     """
     rectifier = zerosum.function.ReciprocalLinearRectifier()
     
@@ -45,10 +49,9 @@ class LanchesterBalance():
         dF[row_winner] /= numpy.square(relative_strengths[row_winner])
         return dF
         
-    def apply_exponent(self, result):
-        result.handicaps = numpy.power(result.handicaps, 1.0 / self.exponent)
-        result.row_handicaps = numpy.power(result.row_handicaps, 1.0 / self.exponent)
-        result.col_handicaps = numpy.power(result.col_handicaps, 1.0 / self.exponent)
+    def decanonicalize(self, handicaps_canonical, F_canonical):
+        handicaps = numpy.power(handicaps_canonical, 1.0 / self.exponent)
+        return handicaps, F_canonical
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None, fix_index = True):
@@ -84,7 +87,6 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
             As NonSymmetricBalance.optimize().
         """
         result = NonSymmetricBalance.optimize(self, *args, **kwargs)
-        self.apply_exponent(result)
         return result
 
 class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
@@ -119,5 +121,4 @@ class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
             As SymmetricBalance.optimize().
         """
         result = SymmetricBalance.optimize(self, *args, **kwargs)
-        self.apply_exponent(result)
         return result
