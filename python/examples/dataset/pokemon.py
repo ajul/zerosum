@@ -1,12 +1,5 @@
-import dataset.csv
+from .base import Dataset
 import numpy
-
-class NonSymmetricDataset():
-    def __init__(self, data, row_names, col_names = None):
-        self.data = data
-        self.row_names = row_names
-        if col_names is None: col_names = row_names
-        self.col_names = col_names
 
 def make_pokemon_dual_type_defender(data, names):
     """ Given names and a single-type payoff matrix, creates a dataset with all dual-type defenders."""
@@ -22,7 +15,7 @@ def make_pokemon_dual_type_defender(data, names):
         new_cols = data[:, i][:, None] * data[:, i+1:]
         dual_data = numpy.append(dual_data, new_cols, axis = 1)
         
-    return NonSymmetricDataset(dual_data, names, dual_names)
+    return Dataset(dual_data, names, dual_names)
         
 # Pokemon type charts. Source: https://bulbapedia.bulbagarden.net/wiki/Type/Type_chart
 
@@ -45,7 +38,7 @@ pokemon_type_chart_1 = numpy.array([
     [1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.5, 2.0, 1.0, 1.0, 0.5, 2.0,],
     [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0,],
     ])
-pokemon_1 = NonSymmetricDataset(pokemon_type_chart_1, pokemon_type_names_1)
+pokemon_1 = Dataset(pokemon_type_chart_1, pokemon_type_names_1)
 
 pokemon_type_names_2 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
      'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark']
@@ -68,7 +61,7 @@ pokemon_type_chart_2 = numpy.array([
     [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0,],
     [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5,],
     ])
-pokemon_2 = NonSymmetricDataset(pokemon_type_chart_2, pokemon_type_names_2)
+pokemon_2 = Dataset(pokemon_type_chart_2, pokemon_type_names_2)
 
 pokemon_type_names_6 = ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
      'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark', 'Fairy', ]
@@ -92,7 +85,7 @@ pokemon_type_chart_6 = numpy.array([
     [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.5, 0.5,],
     [1.0, 2.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0,],
     ])
-pokemon_6 = NonSymmetricDataset(pokemon_type_chart_6, pokemon_type_names_6)
+pokemon_6 = Dataset(pokemon_type_chart_6, pokemon_type_names_6)
 
 pokemon_6_dual_defender = make_pokemon_dual_type_defender(pokemon_type_chart_6, pokemon_type_names_6)
         
@@ -116,36 +109,3 @@ pokemon_type_colors = {
     'Dark' : '#705848',
     'Fairy' : '#EE99AC',
     }
-    
-wh40k_7_to_wound = numpy.zeros((10, 10))
-
-for i in range(10):
-    strength = i + 1
-    for j in range(10):
-        toughness = j + 1
-        chance = strength - toughness + 3
-        if chance > 5: 
-            chance = 5
-        elif chance == 0:
-            chance = 1
-        elif chance < 0:
-            chance = 0
-        wh40k_7_to_wound[i, j] = chance
-
-wh40k_8_to_wound = numpy.zeros((10, 10))
-
-for i in range(10):
-    strength = i + 1
-    for j in range(10):
-        toughness = j + 1
-        if strength >= toughness * 2:
-            chance = 5
-        elif strength > toughness:
-            chance = 4
-        elif strength == toughness:
-            chance = 3
-        elif strength > toughness * 0.5:
-            chance = 2
-        else:
-            chance = 1
-        wh40k_8_to_wound[i, j] = chance
