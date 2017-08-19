@@ -18,7 +18,8 @@ ssb64 = Dataset(numpy.array([
     ]),
     ['Pikachu', 'Kirby', 'Captain Falcon', 'Fox',
      'Yoshi', 'Jigglypuff', 'Mario', 'Samus',
-     'Donkey Kong', 'Ness', 'Link', 'Luigi'])
+     'Donkey Kong', 'Ness', 'Link', 'Luigi'],
+     symmetric = True)
 
 # Super Street Fighter 2 Turbo. Source: http://curryallergy.blogspot.com/2008/11/super-turbo-new-arcadia-diagram.html
 ssf2t = Dataset(numpy.array([
@@ -42,4 +43,5 @@ ssf2t = Dataset(numpy.array([
     ['Ryu', 'Ken', 'E. Honda', 'Chun-Li',
      'Blanka', 'Zangief', 'Guile', 'Dhalsim',
      'T. Hawk', 'Cammy', 'Fei-Long', 'Dee Jay',
-     'Boxer', 'Claw', 'Sagat', 'Dictator'])
+     'Boxer', 'Claw', 'Sagat', 'Dictator'],
+     symmetric = True)

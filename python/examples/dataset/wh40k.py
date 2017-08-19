@@ -1,4 +1,5 @@
 from .base import Dataset
+import numpy
 
 wh40k_7_to_wound = numpy.zeros((10, 10))
 
