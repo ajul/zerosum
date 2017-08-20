@@ -46,10 +46,22 @@ class Balance():
             
     # Optional: implement the following methods in subclasses:
     #def row_derivative(self, row_handicaps, col_handicaps):
-        """Returns: the derivative of the payoff matrix with respect to the row handicaps."""
+        """
+        Returns: 
+            The derivative of the payoff matrix with respect to the row handicaps.
+            Specifically, it returns an array of the same size as the payoff matrix,
+            each element of which is the derivative of the corresponding payoff matrix 
+            with respect to the corresponding row handicap.
+        """
         
     #def col_derivative(self, row_handicaps, col_handicaps):
-        """Returns: the derivative of the payoff matrix with respect to the column handicaps."""
+        """
+        Returns: 
+            The derivative of the payoff matrix with respect to the column handicaps.
+            Specifically, it returns an array of the same size as the payoff matrix,
+            each element of which is the derivative of the corresponding payoff matrix 
+            with respect to the corresponding column handicap.
+        """
     
     def decanonicalize(self, handicaps_canonical, F_canonical):
         """
