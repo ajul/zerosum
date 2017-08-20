@@ -41,7 +41,7 @@ class Balance():
             This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
             In particular, all diagonal elements should be equal to the value of the game.
         """
-        raise NotImplementedError
+        raise NotImplementedError("Balance subclasses must implement a handicap_function.")
 
             
     # Optional: implement the following methods in subclasses:
