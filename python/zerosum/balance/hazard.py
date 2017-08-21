@@ -10,7 +10,7 @@ class HazardBalance():
     However, the effect of the handicap (cost) is different:
     instead of each side being able to afford a quantity of units inversely proportional to cost,
     each side gets one unit, and payoff is cost of damage dealt minus cost of damage received.
-    The handicaps thus do not affect which side wins, or by how much, but rather the cost of doing so.
+    The h thus do not affect which side wins, or by how much, but rather the cost of doing so.
     
     The original example was symmetric, but it can work in the non-symmetric case as well.
     """
@@ -21,35 +21,35 @@ class HazardBalance():
         check_non_negative(self.base_matrix)
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
-    def handicap_function(self, row_handicaps, col_handicaps):
+    def handicap_function(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        payoff_matrix = numpy.zeros_like(relative_strengths)
-        payoff_matrix_r = col_handicaps[None, :] - row_handicaps[:, None] / relative_strengths
-        payoff_matrix_c = col_handicaps[None, :] * relative_strengths - row_handicaps[:, None]
-        payoff_matrix[row_winner] = payoff_matrix_r[row_winner]
-        payoff_matrix[~row_winner] = payoff_matrix_c[~row_winner] 
-        return payoff_matrix
+        F = numpy.zeros_like(relative_strengths)
+        Fr = h_c[None, :] - h_r[:, None] / relative_strengths
+        Fc = h_c[None, :] * relative_strengths - h_r[:, None]
+        F[row_winner] = Fr[row_winner]
+        F[~row_winner] = Fc[~row_winner] 
+        return F
         
-    def row_derivative(self, row_handicaps, col_handicaps):
+    def row_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        d_payoff_matrix = numpy.zeros_like(relative_strengths)
-        d_payoff_matrix_r = -1.0 / relative_strengths
-        d_payoff_matrix_c = -numpy.ones_like(relative_strengths)
-        d_payoff_matrix[row_winner] = d_payoff_matrix_r[row_winner]
-        d_payoff_matrix[~row_winner] = d_payoff_matrix_c[~row_winner]
-        return d_payoff_matrix
+        dF = numpy.zeros_like(relative_strengths)
+        dFr = -1.0 / relative_strengths
+        dFc = -numpy.ones_like(relative_strengths)
+        dF[row_winner] = dFr[row_winner]
+        dF[~row_winner] = dFc[~row_winner]
+        return dF
     
-    def col_derivative(self, row_handicaps, col_handicaps):
+    def col_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        d_payoff_matrix = numpy.zeros_like(relative_strengths)
-        d_payoff_matrix_r = numpy.ones_like(relative_strengths)
-        d_payoff_matrix_c = relative_strengths
-        d_payoff_matrix[row_winner] = d_payoff_matrix_r[row_winner]
-        d_payoff_matrix[~row_winner] = d_payoff_matrix_c[~row_winner]
-        return d_payoff_matrix
+        dF = numpy.zeros_like(relative_strengths)
+        dFr = numpy.ones_like(relative_strengths)
+        dFc = relative_strengths
+        dF[row_winner] = dFr[row_winner]
+        dF[~row_winner] = dFc[~row_winner]
+        return dF
 
 class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = None):

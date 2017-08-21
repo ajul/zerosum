@@ -18,21 +18,21 @@ class Balance():
     Methods and attributes to be set by subclasses:
     """
     
-    def handicap_function(self, row_handicaps, col_handicaps):
+    def handicap_function(self, h_r, h_c):
         """
         Mandatory to override.
         
         Args:
-            row_handicaps, col_handicaps 
+            h_r, h_c: The canonical row and column handicaps.
         Returns:
-            The payoff matrix.
-            Each element of the payoff matrix should depend only on the corresponding row and column handicap.
+            The canoncial payoff matrix.
+            Each element of the canoncial payoff matrix should depend only on the corresponding canonical row and column handicap.
             It is highly desirable that the function be strictly monotonically decreasing 
             in row_handicap and strictly monotonically increasing in col_handicap for every element. 
             NOTE: In the symmetric case the function should also have the property that 
-            handicap_function(row_handicaps, col_handicaps) = -handicap_function(col_handicaps, row_handicaps) + value of the game
+            handicap_function(h_r, h_c) = -handicap_function(h_c, h_r) + value of the game
             where the value of the game is constant.
-            This means that for any setting of the handicaps the payoff matrix is skew-symmetric plus the value of the game.
+            This means that for any setting of h_r, h_c the payoff matrix is skew-symmetric plus the value of the game.
             In particular, all diagonal elements should be equal to the value of the game.
         """
         raise NotImplementedError("Balance subclasses must implement a handicap_function.")
@@ -41,45 +41,45 @@ class Balance():
     """
     Optional to override.
     
-    By default handicaps have the range (-inf, inf). 
+    By default the canonical handicaps have the range (-inf, inf). 
     However, depending on the handicap function, it may only make sense to have
-    strictly positive handicaps in the range (0, inf). 
+    strictly positive canonical handicaps in the range (0, inf). 
     To do this we can use a strictly monotonically increasing rectifier function
-    to map from the raw optimization values x to the handicaps (0, inf).
+    to map from the raw optimization values x to the canonical handicaps.
     Generally zerosum.function.ReciprocalLinearRectifier() is a good choice;
     while exponentials are mathematically elegant, they tend to suffer from accidental overflow.
     """
             
-    def row_derivative(self, row_handicaps, col_handicaps):
+    def row_derivative(self, h_r, h_c):
         """
         Optional to override. Defaults to a finite-difference implementation.
         
-        Returns: the derivative of the payoff matrix with respect to the row handicaps.
+        Returns: the derivative of the payoff matrix with respect to the row h.
         """
-        return self.row_derivative_fd(row_handicaps, col_handicaps)
+        return self.row_derivative_fd(h_r, h_c)
         
-    def col_derivative(self, row_handicaps, col_handicaps):
+    def col_derivative(self, h_r, h_c):
         """
         Optional to override.  Defaults to a finite-difference implementation.
         
-        Returns: the derivative of the payoff matrix with respect to the column handicaps.
+        Returns: the derivative of the payoff matrix with respect to the column h.
         """
-        return self.col_derivative_fd(row_handicaps, col_handicaps)
+        return self.col_derivative_fd(h_r, h_c)
     
-    def decanonicalize(self, handicaps_canonical, payoff_matrix_canonical):
+    def decanonicalize(self, h, F):
         """
         In some cases the problem may be transformed into some canonical form before solving it.
         Subclasses implement this method to transform the result back into a form corresponding to the problem statement.
-        This may modify result.payoff_matrix and/or result.handicap.
+        This may modify result.F and/or result.handicap.
         
         Args:
-            handicaps_canonical
-            payoff_matrix_canonical
+            h: the canonical handicaps.
+            F: the canonical payoff matrix.
         Returns:
             handicaps
-            payoff_matrix
+            F
         """
-        return handicaps_canonical, payoff_matrix_canonical
+        return h, F
     
     """
     Common methods.
@@ -105,8 +105,12 @@ class Balance():
             
             Returns: 
             The result of scipy.optimize.root, with the following additional values:
-                result.handicaps: The solved handicap vector, concatenated for rows and columns if appropriate.
-                result.payoff_matrix: The resulting payoff matrix.
+                result.row_handicaps: The solved decanonicalized row handicaps.
+                    (Canonical: result.h_r)
+                result.col_handicaps: The solved decanonicalized row handicaps.
+                    (Canonical: result.h_c)
+                result.payoff_matrix: The solved decanonicalized payoff matrix.
+                    (Canonical: result.F)
         """
         if x0 is None:
             x0 = numpy.zeros((self.handicap_count))
@@ -119,40 +123,50 @@ class Balance():
             else:
                 fix_x = 0.0
                 
-        def x_to_handicaps(self, x):
+        def x_to_h(self, x):
+            """ 
+            Converts the raw optimization variables x to the 
+            canonical handicaps h.
+            """
             if self.fix_index is not False:
                 full_x = numpy.insert(x, self.fix_index, fix_x)
             else:
                 full_x = x
                 
             if self.rectifier is None:
-                handicaps = full_x
+                h = full_x
             else:
-                handicaps = self.rectifier.evaluate(full_x)
+                h = self.rectifier.evaluate(full_x)
                 
-            return handicaps
+            return h
         
         def fun(x):
-            handicaps = x_to_handicaps(self, x)
-            y = self.objective(handicaps)
+            """
+            The objective function in terms of the raw optimization variables.
+            """
+            h = x_to_h(self, x)
+            y = self.objective(h)
             if self.fix_index is not False:
                 y = numpy.delete(y, self.fix_index)
                 
             if check_derivative is not False:
-                row_handicaps, col_handicaps = self.split_handicaps(handicaps)
+                h_r, h_c = self.split_handicaps(h)
                 epsilon = _epsilon if check_derivative is True else check_derivative
-                self.check_row_derivative(row_handicaps, col_handicaps, epsilon = epsilon)
-                self.check_col_derivative(row_handicaps, col_handicaps, epsilon = epsilon)
+                self.check_row_derivative(h_r, h_c, epsilon = epsilon)
+                self.check_col_derivative(h_r, h_c, epsilon = epsilon)
             if check_jacobian is not False:
                 epsilon = _epsilon if check_jacobian is True else check_jacobian
-                self.check_jacobian(handicaps, epsilon = check_jacobian)
+                self.check_jacobian(h, epsilon = check_jacobian)
             
             return y
     
         if use_jacobian:
             def jac(x):
-                handicaps = x_to_handicaps(self, x)
-                J = self.jacobian(handicaps)
+                """
+                Jacobian of the objective function.
+                """
+                h = x_to_h(self, x)
+                J = self.jacobian(h)
                 if self.fix_index is not False:
                     J = numpy.delete(J, self.fix_index, axis = 0)
                     J = numpy.delete(J, self.fix_index, axis = 1)
@@ -164,12 +178,13 @@ class Balance():
         
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, method = method, *args, **kwargs)
         
-        result.handicaps_canonical = x_to_handicaps(self, result.x)
-        result.row_handicaps_canonical, result.col_handicaps_canonical = self.split_handicaps(result.handicaps_canonical)
-        result.payoff_matrix_canonical = self.handicap_function(result.row_handicaps_canonical, result.col_handicaps_canonical)
+        result.h = x_to_h(self, result.x)
+        result.h_r, result.h_c = self.split_handicaps(result.h)
+        result.F = self.handicap_function(result.h_r, result.h_c)
         
-        result.handicaps, result.payoff_matrix = self.decanonicalize(result.handicaps_canonical, result.payoff_matrix_canonical)
-        result.row_handicaps, result.col_handicaps = self.split_handicaps(result.handicaps)
+        # Decanonicalize the canonical handicaps into the final values.
+        result.handicaps, result.payoff_matrix = self.decanonicalize(result.h, result.F)
+        result.row_handicaps, result.col_handicaps = self.split_handicaps(result.h)
         
         return result
     
@@ -177,61 +192,61 @@ class Balance():
     Methods for checking derivatives and Jacobians.
     """
     
-    def jacobian_fd(self, handicaps, epsilon = _epsilon):
+    def jacobian_fd(self, h, epsilon = _epsilon):
         """ Computes a finite (central) difference approximation of the Jacobian. """
         J = numpy.zeros((self.handicap_count, self.handicap_count))
         
         for input_index in range(self.handicap_count):
-            hdp = handicaps.copy()
+            hdp = h.copy()
             hdp[input_index] += epsilon * 0.5
             
-            hdn = handicaps.copy()
+            hdn = h.copy()
             hdn[input_index] -= epsilon * 0.5
             
             J[:, input_index] = (self.objective(hdp) - self.objective(hdn)) / epsilon
         
         return J
 
-    def check_jacobian(self, handicaps = None, epsilon = _epsilon):
+    def check_jacobian(self, h = None, epsilon = _epsilon):
         """ 
         Checks the Jacobian computed from the handicap function derivatives 
         against a finite difference approximation. 
         """
-        if handicaps is None: handicaps = numpy.zeros(self.handicap_count)
-        result = self.jacobian(handicaps) - self.jacobian_fd(handicaps)
+        if h is None: h = numpy.zeros(self.handicap_count)
+        result = self.jacobian(h) - self.jacobian_fd(h)
         print('Maximum difference between evaluated Jacobian and finite difference:', 
             numpy.max(numpy.abs(result)))
         return result
         
-    def row_derivative_fd(self, row_handicaps, col_handicaps, epsilon = _epsilon):
+    def row_derivative_fd(self, h_r, h_c, epsilon = _epsilon):
         """ 
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding row handicap. 
         """
         
-        row_handicaps_N = row_handicaps - epsilon * 0.5
-        row_handicaps_P = row_handicaps + epsilon * 0.5
-        return (self.handicap_function(row_handicaps_P, col_handicaps) - self.handicap_function(row_handicaps_N, col_handicaps)) / epsilon
+        h_r_N = h_r - epsilon * 0.5
+        h_r_P = h_r + epsilon * 0.5
+        return (self.handicap_function(h_r_P, h_c) - self.handicap_function(h_r_N, h_c)) / epsilon
         
-    def col_derivative_fd(self, row_handicaps, col_handicaps, epsilon = _epsilon):
+    def col_derivative_fd(self, h_r, h_c, epsilon = _epsilon):
         """ 
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding column handicap. 
         """
-        col_handicaps_N = col_handicaps - epsilon * 0.5
-        col_handicaps_P = col_handicaps + epsilon * 0.5
-        return (self.handicap_function(row_handicaps, col_handicaps_P) - self.handicap_function(row_handicaps, col_handicaps_N)) / epsilon
+        h_c_N = h_c - epsilon * 0.5
+        h_c_P = h_c + epsilon * 0.5
+        return (self.handicap_function(h_r, h_c_P) - self.handicap_function(h_r, h_c_N)) / epsilon
         
-    def check_row_derivative(self, row_handicaps, col_handicaps, epsilon = _epsilon):
+    def check_row_derivative(self, h_r, h_c, epsilon = _epsilon):
         """ 
         Checks the derivative of the handicap function with respect to the corresponding row handicap 
         against a finite difference approximation.
         Also checks that all row derivatives are negative.
         """
-        direct = self.row_derivative(row_handicaps, col_handicaps)
-        fd = self.row_derivative_fd(row_handicaps, col_handicaps, epsilon)
+        direct = self.row_derivative(h_r, h_c)
+        fd = self.row_derivative_fd(h_r, h_c, epsilon)
         if numpy.any(direct >= 0.0) or numpy.any(fd >= 0.0):
-            msg = 'Found a non-negative row derivative for\nrow_handicaps = %s\ncol_handicaps = %s.' % (row_handicaps, col_handicaps)
+            msg = 'Found a non-negative row derivative for\nh_r = %s\nh_c = %s.' % (h_r, h_c)
             msg += '\nIt is highly desirable that the handicap function be strictly monotonically decreasing in the row handicap.'
             warnings.warn(msg, DerivativeWarning)
         result = direct - fd
@@ -239,16 +254,16 @@ class Balance():
             numpy.max(numpy.abs(result)))
         return result
     
-    def check_col_derivative(self, row_handicaps, col_handicaps, epsilon = _epsilon):
+    def check_col_derivative(self, h_r, h_c, epsilon = _epsilon):
         """
         Checks the derivative of the handicap function with respect to the corresponding column handicap 
         against a finite difference approximation.
         Also checks that all column derivatives are negative.
         """
-        direct = self.col_derivative(row_handicaps, col_handicaps)
-        fd = self.col_derivative_fd(row_handicaps, col_handicaps, epsilon)
+        direct = self.col_derivative(h_r, h_c)
+        fd = self.col_derivative_fd(h_r, h_c, epsilon)
         if numpy.any(direct <= 0.0) or numpy.any(fd <= 0.0):
-            msg = 'Found a non-positive column derivative for\nrow_handicaps = %s\ncol_handicaps = %s.' % (row_handicaps, col_handicaps)
+            msg = 'Found a non-positive column derivative for\nh_r = %s\nh_c = %s.' % (h_r, h_c)
             msg += '\nIt is highly desirable that the handicap function be strictly monotonically increasing in the column handicap.'
             warnings.warn(msg, DerivativeWarning)
         result = direct - fd
@@ -295,11 +310,11 @@ class NonSymmetricBalance(Balance):
         
         self.fix_index = fix_index
         
-    def split_handicaps(self, handicaps):
-        """ Splits handicaps into row_handicaps and col_handicaps. """
-        return handicaps[:self.row_count], handicaps[-self.col_count:]
+    def split_handicaps(self, h):
+        """ Splits handicaps (canonical or not) into row and col handicaps."""
+        return h[:self.row_count], h[-self.col_count:]
         
-    def objective(self, handicaps):
+    def objective(self, h):
         """
         Compute the objective vector, which is desired to be zero. 
         This is the expected payoff of each strategy for that player, times the weight of that strategy.
@@ -307,39 +322,39 @@ class NonSymmetricBalance(Balance):
         This works since they do not affect the expected payoff of other strategies.
         """
         
-        row_handicaps, col_handicaps = self.split_handicaps(handicaps)
+        h_r, h_c = self.split_handicaps(h)
     
-        payoff_matrix = self.handicap_function(row_handicaps, col_handicaps)
+        F = self.handicap_function(h_r, h_c)
         
         # Dot products are weighted.
-        row_objectives = (numpy.tensordot(payoff_matrix, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
-        col_objectives = (self.value - numpy.tensordot(payoff_matrix, self.row_weights, axes = ([0], [0]))) * self.col_objective_weights
+        row_objectives = (numpy.tensordot(F, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
+        col_objectives = (self.value - numpy.tensordot(F, self.row_weights, axes = ([0], [0]))) * self.col_objective_weights
         
         return numpy.concatenate((row_objectives, col_objectives))
         
-    def jacobian(self, handicaps):
-        """ Compute the Jacobian of the objective using the provided handicaps. """
+    def jacobian(self, h):
+        """ Compute the Jacobian of the objective using the provided canonical handicaps h. """
         
-        row_handicaps, col_handicaps = self.split_handicaps(handicaps)
+        h_r, h_c = self.split_handicaps(h)
         
         # J_ij = derivative of payoff i with respect to handicap j.
         
-        d_payoff_matrix_r = self.row_derivative(row_handicaps, col_handicaps)
-        d_payoff_matrix_c = self.col_derivative(row_handicaps, col_handicaps)
+        dFr = self.row_derivative(h_r, h_c)
+        dFc = self.col_derivative(h_r, h_c)
         
-        # Derivative of row payoffs with respect to row handicaps.
-        Jrr = numpy.tensordot(d_payoff_matrix_r, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
+        # Derivative of row payoffs with respect to row h.
+        Jrr = numpy.tensordot(dFr, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
         Jrr = numpy.diag(Jrr)
         
-        # Derivative of col payoffs with respect to col handicaps.
-        Jcc = -numpy.tensordot(d_payoff_matrix_c, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
+        # Derivative of col payoffs with respect to col h.
+        Jcc = -numpy.tensordot(dFc, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
         Jcc = numpy.diag(Jcc)
         
-        # Derivative of row payoffs with respect to col handicaps.
-        Jrc = d_payoff_matrix_c * self.col_weights[None, :] * self.row_objective_weights[:, None]
+        # Derivative of row payoffs with respect to col h.
+        Jrc = dFc * self.col_weights[None, :] * self.row_objective_weights[:, None]
         
-        # Derivative of col payoffs with respect to row handicaps.
-        Jcr = -d_payoff_matrix_r * self.row_weights[:, None] * self.col_objective_weights[None, :]
+        # Derivative of col payoffs with respect to row h.
+        Jcr = -dFr * self.row_weights[:, None] * self.col_objective_weights[None, :]
         Jcr = numpy.transpose(Jcr)
         
         # Assemble full Jacobian.
@@ -383,11 +398,11 @@ class SymmetricBalance(Balance):
         
         self.fix_index = fix_index
    
-    def split_handicaps(self, handicaps):
-        """ Splits handicaps into row_handicaps and col_handicaps. """
-        return handicaps, handicaps
+    def split_handicaps(self, h):
+        """ Splits handicaps (canonical or not) into row and col handicaps."""
+        return h, h
         
-    def objective(self, handicaps):
+    def objective(self, h):
         """
         Compute the objective vector, which is desired to be zero. 
         This is the expected payoff of each strategy for that player, times the weight of that stategy.
@@ -395,37 +410,37 @@ class SymmetricBalance(Balance):
         This works since they do not affect the expected payoff of other strategies.
         """
         
-        row_handicaps, col_handicaps = self.split_handicaps(handicaps)
-        payoff_matrix = self.handicap_function(row_handicaps, col_handicaps)
+        h_r, h_c = self.split_handicaps(h)
+        F = self.handicap_function(h_r, h_c)
         if self.value is None:
-            self.value = numpy.average(numpy.diag(payoff_matrix), weights = self.strategy_weights)
+            self.value = numpy.average(numpy.diag(F), weights = self.strategy_weights)
         
         # Dot products are weighted.
-        objectives = (numpy.tensordot(payoff_matrix, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
+        objectives = (numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
         
         return objectives
         
-    def jacobian(self, handicaps):
-        """ Compute the Jacobian of the objective using the provided row_derivative. """
-        row_handicaps, col_handicaps = self.split_handicaps(handicaps)
-        d_payoff_matrix_r = self.row_derivative(row_handicaps, col_handicaps)
+    def jacobian(self, h):
+        """ Compute the Jacobian of the objective using self.row_derivative. """
+        h_r, h_c = self.split_handicaps(h)
+        dFr = self.row_derivative(h_r, h_c)
         
-        # Derivative of row payoffs with respect to row handicaps.
-        Jrr = numpy.tensordot(d_payoff_matrix_r, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
+        # Derivative of row payoffs with respect to row h.
+        Jrr = numpy.tensordot(dFr, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         Jrr = numpy.diag(Jrr)
         
-        # Derivative of row payoffs with respect to col handicaps.
-        d_payoff_matrix_c = -numpy.transpose(d_payoff_matrix_r)
-        Jrc = d_payoff_matrix_c * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
+        # Derivative of row payoffs with respect to col h.
+        dFc = -numpy.transpose(dFr)
+        Jrc = dFc * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
         
-        # Variables change both row and col handicaps at the same time, so Jacobian is the sum of their effects.
+        # Variables change both row and col h at the same time, so Jacobian is the sum of their effects.
         J = Jrr + Jrc
         
         return J
     
-    def col_derivative(self, row_handicaps, col_handicaps):
+    def col_derivative(self, h_r, h_c):
         """ Using the skew-symmetry property. """
-        return -self.row_derivative(row_handicaps, col_handicaps).transpose()
+        return -self.row_derivative(h_r, h_c).transpose()
         
 class DerivativeWarning(RuntimeWarning):
     pass

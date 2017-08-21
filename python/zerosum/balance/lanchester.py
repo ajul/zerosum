@@ -4,7 +4,7 @@ from .input_checks import *
 class LanchesterBalance():
     """
     A handicap function based on Lanchester attrition. 
-    Handicaps represent unit costs, with each side having the same "budget",
+    handicaps represent unit costs, with each side having the same "budget",
     so a higher cost means a smaller force.
     The payoff magnitude is the proportion of the winning side remaining 
     after the losing side has been eliminated, with the sign corresponding to the winning side,
@@ -24,34 +24,34 @@ class LanchesterBalance():
         check_non_negative(self.base_matrix)
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
-    def handicap_function(self, row_handicaps, col_handicaps):
-        relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
+    def handicap_function(self, h_r, h_c):
+        relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
         row_winner = relative_strengths > 1.0
         col_winner = relative_strengths < 1.0
-        payoff_matrix = numpy.zeros_like(relative_strengths)
-        payoff_matrix[row_winner] = 1.0 - 1.0 / relative_strengths[row_winner]
-        payoff_matrix[col_winner] = -1.0 + relative_strengths[col_winner]
-        return payoff_matrix
+        F = numpy.zeros_like(relative_strengths)
+        F[row_winner] = 1.0 - 1.0 / relative_strengths[row_winner]
+        F[col_winner] = -1.0 + relative_strengths[col_winner]
+        return F
         
-    def row_derivative(self, row_handicaps, col_handicaps):
-        relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
-        drelative_strengths = -self.base_matrix * col_handicaps[None, :] / numpy.square(row_handicaps)[:, None]
+    def row_derivative(self, h_r, h_c):
+        relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
+        drelative_strengths = -self.base_matrix * h_c[None, :] / numpy.square(h_r)[:, None]
         row_winner = relative_strengths > 1.0
-        d_payoff_matrix = numpy.copy(drelative_strengths)
-        d_payoff_matrix[row_winner] /= numpy.square(relative_strengths[row_winner])
-        return d_payoff_matrix
+        dF = numpy.copy(drelative_strengths)
+        dF[row_winner] /= numpy.square(relative_strengths[row_winner])
+        return dF
         
-    def col_derivative(self, row_handicaps, col_handicaps):
-        relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
-        drelative_strengths = self.base_matrix / row_handicaps[:, None]
+    def col_derivative(self, h_r, h_c):
+        relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
+        drelative_strengths = self.base_matrix / h_r[:, None]
         row_winner = relative_strengths > 1.0  
-        d_payoff_matrix = numpy.copy(drelative_strengths)
-        d_payoff_matrix[row_winner] /= numpy.square(relative_strengths[row_winner])
-        return d_payoff_matrix
+        dF = numpy.copy(drelative_strengths)
+        dF[row_winner] /= numpy.square(relative_strengths[row_winner])
+        return dF
         
-    def decanonicalize(self, handicaps_canonical, payoff_matrix_canonical):
-        handicaps = numpy.power(handicaps_canonical, 1.0 / self.exponent)
-        return handicaps, payoff_matrix_canonical
+    def decanonicalize(self, h, F):
+        handicaps = numpy.power(h, 1.0 / self.exponent)
+        return handicaps, F
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None, fix_index = True):
@@ -75,19 +75,6 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
         LanchesterBalance.__init__(self, base_matrix, exponent)
-        
-    def optimize(self, *args, **kwargs):
-        """
-        Compute the handicaps that balance the game using scipy.optimize.root.
-        
-        Args:
-            As NonSymmetricBalance.optimize().
-        
-        Returns:
-            As NonSymmetricBalance.optimize().
-        """
-        result = NonSymmetricBalance.optimize(self, *args, **kwargs)
-        return result
 
 class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
     def __init__(self, base_matrix, exponent = 1.0, strategy_weights = None, fix_index = True):
@@ -109,16 +96,3 @@ class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
 
         SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
         LanchesterBalance.__init__(self, base_matrix, exponent)
-    
-    def optimize(self, *args, **kwargs):
-        """
-        Compute the handicaps that balance the game using scipy.optimize.root.
-        
-        Args:
-            As SymmetricBalance.optimize().
-        
-        Returns:
-            As SymmetricBalance.optimize().
-        """
-        result = SymmetricBalance.optimize(self, *args, **kwargs)
-        return result

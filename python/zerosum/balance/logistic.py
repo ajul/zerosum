@@ -5,7 +5,7 @@ class LogisticBalance():
     """
     A special case where the handicap functions are logistic functions 
     whose argument is row_handicap - col_handicap + offset, 
-    where offset is chosen so that when all handicaps are zero the base_matrix is recovered.
+    where offset is chosen so that when all h are zero the base_matrix is recovered.
     Commonly payoffs represent win rates.
     
     The optimization is done over the canonical range (-0.5, 0.5). 
@@ -36,22 +36,22 @@ class LogisticBalance():
         
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
-    def handicap_function(self, row_handicaps, col_handicaps):
-        return 1.0 / (1.0 + numpy.exp(row_handicaps[:, None] - col_handicaps[None, :] + self.initial_offset_matrix)) - 0.5
+    def handicap_function(self, h_r, h_c):
+        return 1.0 / (1.0 + numpy.exp(h_r[:, None] - h_c[None, :] + self.initial_offset_matrix)) - 0.5
         
-    def row_derivative(self, row_handicaps, col_handicaps):
-        payoffs = self.handicap_function(row_handicaps, col_handicaps)
+    def row_derivative(self, h_r, h_c):
+        payoffs = self.handicap_function(h_r, h_c)
         return payoffs * payoffs - 0.25
     
-    def col_derivative(self, row_handicaps, col_handicaps):
-        payoffs = self.handicap_function(row_handicaps, col_handicaps)
+    def col_derivative(self, h_r, h_c):
+        payoffs = self.handicap_function(h_r, h_c)
         return 0.25 - payoffs * payoffs
         
-    def decanonicalize(self, handicaps_canonical, payoff_matrix_canonical):
-        """ Expands payoff_matrix back to the original range (0, max_payoff). """
-        payoff_matrix = (payoff_matrix_canonical + 0.5) * self.max_payoff
+    def decanonicalize(self, h, F):
+        """ Expands the payoff matrix back to the original range (0, max_payoff). """
+        payoff_matrix = (F + 0.5) * self.max_payoff
         
-        return handicaps_canonical, payoff_matrix
+        return h, payoff_matrix
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
     def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None, fix_index = True):
