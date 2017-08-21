@@ -10,14 +10,17 @@ class LanchesterBalance():
     after the losing side has been eliminated, with the sign corresponding to the winning side,
     i.e. positive = row player.
     
-    The optimization is done with a canonical Lanchester exponent of 1, 
-    corresponding to Lanchester's linear law.
-    The resulting handicaps are then raised to 1 / exponent.
+    The optimization is done over canonical handicaps h = handicap ** exponent.
+    
+    Note that for exponents above 1.0 this handicap function has a sharp kink
+    whenever both sides are nearly evenly matched.
     """
     rectifier = zerosum.function.ReciprocalLinearRectifier()
     
     def __init__(self, base_matrix, exponent):
         self.base_matrix = base_matrix
+        if exponent <= 0.0:
+            raise ValueError('Lanchester exponent must be positive.')
         if exponent < 1.0 or exponent > 2.0:
             warnings.warn("Lanchester exponent of %0.2f is not within the conventional interval [1.0, 2.0]." % exponent, ValueWarning)
         self.exponent = exponent
@@ -26,27 +29,44 @@ class LanchesterBalance():
     
     def handicap_function(self, h_r, h_c):
         relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
+        
         row_winner = relative_strengths > 1.0
         col_winner = relative_strengths < 1.0
         F = numpy.zeros_like(relative_strengths)
-        F[row_winner] = 1.0 - 1.0 / relative_strengths[row_winner]
-        F[col_winner] = -1.0 + relative_strengths[col_winner]
+        F[row_winner] = numpy.power(1.0 - 1.0 / relative_strengths[row_winner], 1.0 / self.exponent)
+        F[col_winner] = -numpy.power(1.0 - relative_strengths[col_winner], 1.0 / self.exponent)
         return F
-        
+
     def row_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
         drelative_strengths = -self.base_matrix * h_c[None, :] / numpy.square(h_r)[:, None]
+        
         row_winner = relative_strengths > 1.0
-        dF = numpy.copy(drelative_strengths)
+        col_winner = relative_strengths < 1.0
+        
+        # Exponents above 1.0 cause a sharp kink at the origin, so we default to a derivative of 1.0.
+        dF = numpy.ones_like(relative_strengths)
+        dF[row_winner] = numpy.power(1.0 - 1.0 / relative_strengths[row_winner], 1.0 / self.exponent - 1.0)
         dF[row_winner] /= numpy.square(relative_strengths[row_winner])
+        dF[col_winner] = numpy.power(1.0 - relative_strengths[col_winner], 1.0 / self.exponent - 1.0)
+        dF *= (drelative_strengths / self.exponent)
+        
         return dF
         
     def col_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix * h_c[None, :] / h_r[:, None]
         drelative_strengths = self.base_matrix / h_r[:, None]
-        row_winner = relative_strengths > 1.0  
-        dF = numpy.copy(drelative_strengths)
+        
+        row_winner = relative_strengths > 1.0
+        col_winner = relative_strengths < 1.0
+        
+        # Exponents above 1.0 cause a sharp kink at the origin, so we default to a derivative of 1.0.
+        dF = numpy.ones_like(relative_strengths)
+        dF[row_winner] = numpy.power(1.0 - 1.0 / relative_strengths[row_winner], 1.0 / self.exponent - 1.0)
         dF[row_winner] /= numpy.square(relative_strengths[row_winner])
+        dF[col_winner] = numpy.power(1.0 - relative_strengths[col_winner], 1.0 / self.exponent - 1.0)
+        dF *= (drelative_strengths / self.exponent)
+        
         return dF
         
     def decanonicalize(self, h, F):
@@ -58,10 +78,7 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
         """
         Args:
             base_matrix: Should be strictly positive.
-            exponent: The Lanchester exponent. 
-                The optimization is computed using a Lanchester linear law. 
-                Other Lanchester exponents are handled simply by 
-                raising the resulting handicap values to (1 / exponent).
+            exponent: The Lanchester exponent, which should be positive. Typical values are in [1.0, 2.0].
             value: Desired value of the game. Should be in the interval (-1, 1).
             row_weights, col_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
