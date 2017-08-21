@@ -5,7 +5,7 @@ import timeit
 import zerosum.balance
 import tests.common
 
-class TestHazardNonSymmetricBalance(tests.common.TestInitialMatrixNonSymmetricBalanceBase):
+class TestHazardNonSymmetricBalance(tests.common.TestNonSymmetricBalanceBase):
     class_to_test = zerosum.balance.HazardNonSymmetricBalance
     
     def generate_random_args(self, rows, cols):
@@ -17,7 +17,7 @@ class TestHazardNonSymmetricBalance(tests.common.TestInitialMatrixNonSymmetricBa
         }
         return kwargs, value
 
-class TestHazardSymmetricBalance(tests.common.TestInitialMatrixSymmetricBalanceBase):
+class TestHazardSymmetricBalance(tests.common.TestSymmetricBalanceBase):
     class_to_test = zerosum.balance.HazardSymmetricBalance
     
     def generate_random_args(self, rows):

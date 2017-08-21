@@ -5,7 +5,7 @@ import timeit
 import zerosum.balance
 import tests.common
 
-class TestMultiplicativeBalance(tests.common.TestInitialMatrixNonSymmetricBalanceBase):
+class TestMultiplicativeBalance(tests.common.TestNonSymmetricBalanceBase):
     class_to_test = zerosum.balance.MultiplicativeBalance
     
     def generate_random_args(self, rows, cols):

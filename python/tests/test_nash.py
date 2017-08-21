@@ -4,9 +4,12 @@ import zerosum.nash
 import tests.common
 
 class TestNash(unittest.TestCase):
+    num_random_trials = 100
+    strategy_count = 16
+    
     def test_random(self):
-        for i in range(tests.common.num_random_trials):
-            payoff_matrix = numpy.random.normal(size = (tests.common.strategy_count, tests.common.strategy_count))
+        for i in range(self.num_random_trials):
+            payoff_matrix = numpy.random.normal(size = (self.strategy_count, self.strategy_count))
             row_result, col_result = zerosum.nash.nash(payoff_matrix)
             # Both results should have the same value (with opposite sign).
             numpy.testing.assert_allclose(row_result.value, -col_result.value)
