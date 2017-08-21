@@ -33,8 +33,8 @@ class TestInitialMatrixNonSymmetricBalanceBase(unittest.TestCase):
     def check_result_value(self, result, value, row_weights = None, col_weights = None):
         try:
             self.assertTrue(result.success)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = row_weights, axis = 0), value, atol = solution_atol)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = col_weights, axis = 1), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.payoff_matrix, weights = row_weights, axis = 0), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.payoff_matrix, weights = col_weights, axis = 1), value, atol = solution_atol)
         except Exception as e:
             print(result)
             raise e
@@ -90,8 +90,8 @@ class TestInitialMatrixSymmetricBalanceBase(unittest.TestCase):
     def check_result_value(self, result, value, strategy_weights = None):
         try:
             self.assertTrue(result.success)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 0), value, atol = solution_atol)
-            numpy.testing.assert_allclose(numpy.average(result.F, weights = strategy_weights, axis = 1), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.payoff_matrix, weights = strategy_weights, axis = 0), value, atol = solution_atol)
+            numpy.testing.assert_allclose(numpy.average(result.payoff_matrix, weights = strategy_weights, axis = 1), value, atol = solution_atol)
         except Exception as e:
             print(result)
             raise e

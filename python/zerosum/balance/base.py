@@ -66,20 +66,20 @@ class Balance():
         """
         return self.col_derivative_fd(row_handicaps, col_handicaps)
     
-    def decanonicalize(self, handicaps_canonical, F_canonical):
+    def decanonicalize(self, handicaps_canonical, payoff_matrix_canonical):
         """
         In some cases the problem may be transformed into some canonical form before solving it.
         Subclasses implement this method to transform the result back into a form corresponding to the problem statement.
-        This may modify result.F and/or result.handicap.
+        This may modify result.payoff_matrix and/or result.handicap.
         
         Args:
             handicaps_canonical
-            F_canonical
+            payoff_matrix_canonical
         Returns:
             handicaps
-            F
+            payoff_matrix
         """
-        return handicaps_canonical, F_canonical
+        return handicaps_canonical, payoff_matrix_canonical
     
     """
     Common methods.
@@ -106,7 +106,7 @@ class Balance():
             Returns: 
             The result of scipy.optimize.root, with the following additional values:
                 result.handicaps: The solved handicap vector, concatenated for rows and columns if appropriate.
-                result.F: The resulting payoff matrix.
+                result.payoff_matrix: The resulting payoff matrix.
         """
         if x0 is None:
             x0 = numpy.zeros((self.handicap_count))
@@ -166,9 +166,9 @@ class Balance():
         
         result.handicaps_canonical = x_to_handicaps(self, result.x)
         result.row_handicaps_canonical, result.col_handicaps_canonical = self.split_handicaps(result.handicaps_canonical)
-        result.F_canonical = self.handicap_function(result.row_handicaps_canonical, result.col_handicaps_canonical)
+        result.payoff_matrix_canonical = self.handicap_function(result.row_handicaps_canonical, result.col_handicaps_canonical)
         
-        result.handicaps, result.F = self.decanonicalize(result.handicaps_canonical, result.F_canonical)
+        result.handicaps, result.payoff_matrix = self.decanonicalize(result.handicaps_canonical, result.payoff_matrix_canonical)
         result.row_handicaps, result.col_handicaps = self.split_handicaps(result.handicaps)
         
         return result
@@ -309,11 +309,11 @@ class NonSymmetricBalance(Balance):
         
         row_handicaps, col_handicaps = self.split_handicaps(handicaps)
     
-        F = self.handicap_function(row_handicaps, col_handicaps)
+        payoff_matrix = self.handicap_function(row_handicaps, col_handicaps)
         
         # Dot products are weighted.
-        row_objectives = (numpy.tensordot(F, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
-        col_objectives = (self.value - numpy.tensordot(F, self.row_weights, axes = ([0], [0]))) * self.col_objective_weights
+        row_objectives = (numpy.tensordot(payoff_matrix, self.col_weights, axes = ([1], [0])) - self.value) * self.row_objective_weights
+        col_objectives = (self.value - numpy.tensordot(payoff_matrix, self.row_weights, axes = ([0], [0]))) * self.col_objective_weights
         
         return numpy.concatenate((row_objectives, col_objectives))
         
@@ -324,22 +324,22 @@ class NonSymmetricBalance(Balance):
         
         # J_ij = derivative of payoff i with respect to handicap j.
         
-        dFdr = self.row_derivative(row_handicaps, col_handicaps)
-        dFdc = self.col_derivative(row_handicaps, col_handicaps)
+        d_payoff_matrix_r = self.row_derivative(row_handicaps, col_handicaps)
+        d_payoff_matrix_c = self.col_derivative(row_handicaps, col_handicaps)
         
         # Derivative of row payoffs with respect to row handicaps.
-        Jrr = numpy.tensordot(dFdr, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
+        Jrr = numpy.tensordot(d_payoff_matrix_r, self.col_weights, axes = ([1], [0])) * self.row_objective_weights
         Jrr = numpy.diag(Jrr)
         
         # Derivative of col payoffs with respect to col handicaps.
-        Jcc = -numpy.tensordot(dFdc, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
+        Jcc = -numpy.tensordot(d_payoff_matrix_c, self.row_weights, axes = ([0], [0])) * self.col_objective_weights
         Jcc = numpy.diag(Jcc)
         
         # Derivative of row payoffs with respect to col handicaps.
-        Jrc = dFdc * self.col_weights[None, :] * self.row_objective_weights[:, None]
+        Jrc = d_payoff_matrix_c * self.col_weights[None, :] * self.row_objective_weights[:, None]
         
         # Derivative of col payoffs with respect to row handicaps.
-        Jcr = -dFdr * self.row_weights[:, None] * self.col_objective_weights[None, :]
+        Jcr = -d_payoff_matrix_r * self.row_weights[:, None] * self.col_objective_weights[None, :]
         Jcr = numpy.transpose(Jcr)
         
         # Assemble full Jacobian.
@@ -396,27 +396,27 @@ class SymmetricBalance(Balance):
         """
         
         row_handicaps, col_handicaps = self.split_handicaps(handicaps)
-        F = self.handicap_function(row_handicaps, col_handicaps)
+        payoff_matrix = self.handicap_function(row_handicaps, col_handicaps)
         if self.value is None:
-            self.value = numpy.average(numpy.diag(F), weights = self.strategy_weights)
+            self.value = numpy.average(numpy.diag(payoff_matrix), weights = self.strategy_weights)
         
         # Dot products are weighted.
-        objectives = (numpy.tensordot(F, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
+        objectives = (numpy.tensordot(payoff_matrix, self.strategy_weights, axes = ([1], [0])) - self.value) * self.strategy_objective_weights
         
         return objectives
         
     def jacobian(self, handicaps):
         """ Compute the Jacobian of the objective using the provided row_derivative. """
         row_handicaps, col_handicaps = self.split_handicaps(handicaps)
-        dFdr = self.row_derivative(row_handicaps, col_handicaps)
+        d_payoff_matrix_r = self.row_derivative(row_handicaps, col_handicaps)
         
         # Derivative of row payoffs with respect to row handicaps.
-        Jrr = numpy.tensordot(dFdr, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
+        Jrr = numpy.tensordot(d_payoff_matrix_r, self.strategy_weights, axes = ([1], [0])) * self.strategy_objective_weights
         Jrr = numpy.diag(Jrr)
         
         # Derivative of row payoffs with respect to col handicaps.
-        dFdc = -numpy.transpose(dFdr)
-        Jrc = dFdc * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
+        d_payoff_matrix_c = -numpy.transpose(d_payoff_matrix_r)
+        Jrc = d_payoff_matrix_c * self.strategy_weights[None, :] * self.strategy_objective_weights[:, None]
         
         # Variables change both row and col handicaps at the same time, so Jacobian is the sum of their effects.
         J = Jrr + Jrc

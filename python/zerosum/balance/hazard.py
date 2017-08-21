@@ -24,32 +24,32 @@ class HazardBalance():
     def handicap_function(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        F = numpy.zeros_like(relative_strengths)
-        Fr = col_handicaps[None, :] - row_handicaps[:, None] / relative_strengths
-        Fc = col_handicaps[None, :] * relative_strengths - row_handicaps[:, None]
-        F[row_winner] = Fr[row_winner]
-        F[~row_winner] = Fc[~row_winner] 
-        return F
+        payoff_matrix = numpy.zeros_like(relative_strengths)
+        payoff_matrix_r = col_handicaps[None, :] - row_handicaps[:, None] / relative_strengths
+        payoff_matrix_c = col_handicaps[None, :] * relative_strengths - row_handicaps[:, None]
+        payoff_matrix[row_winner] = payoff_matrix_r[row_winner]
+        payoff_matrix[~row_winner] = payoff_matrix_c[~row_winner] 
+        return payoff_matrix
         
     def row_derivative(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        dF = numpy.zeros_like(relative_strengths)
-        dFr = -1.0 / relative_strengths
-        dFc = -numpy.ones_like(relative_strengths)
-        dF[row_winner] = dFr[row_winner]
-        dF[~row_winner] = dFc[~row_winner]
-        return dF
+        d_payoff_matrix = numpy.zeros_like(relative_strengths)
+        d_payoff_matrix_r = -1.0 / relative_strengths
+        d_payoff_matrix_c = -numpy.ones_like(relative_strengths)
+        d_payoff_matrix[row_winner] = d_payoff_matrix_r[row_winner]
+        d_payoff_matrix[~row_winner] = d_payoff_matrix_c[~row_winner]
+        return d_payoff_matrix
     
     def col_derivative(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
-        dF = numpy.zeros_like(relative_strengths)
-        dFr = numpy.ones_like(relative_strengths)
-        dFc = relative_strengths
-        dF[row_winner] = dFr[row_winner]
-        dF[~row_winner] = dFc[~row_winner]
-        return dF
+        d_payoff_matrix = numpy.zeros_like(relative_strengths)
+        d_payoff_matrix_r = numpy.ones_like(relative_strengths)
+        d_payoff_matrix_c = relative_strengths
+        d_payoff_matrix[row_winner] = d_payoff_matrix_r[row_winner]
+        d_payoff_matrix[~row_winner] = d_payoff_matrix_c[~row_winner]
+        return d_payoff_matrix
 
 class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = None):

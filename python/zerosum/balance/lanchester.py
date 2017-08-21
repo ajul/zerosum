@@ -28,30 +28,30 @@ class LanchesterBalance():
         relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
         row_winner = relative_strengths > 1.0
         col_winner = relative_strengths < 1.0
-        F = numpy.zeros_like(relative_strengths)
-        F[row_winner] = 1.0 - 1.0 / relative_strengths[row_winner]
-        F[col_winner] = -1.0 + relative_strengths[col_winner]
-        return F
+        payoff_matrix = numpy.zeros_like(relative_strengths)
+        payoff_matrix[row_winner] = 1.0 - 1.0 / relative_strengths[row_winner]
+        payoff_matrix[col_winner] = -1.0 + relative_strengths[col_winner]
+        return payoff_matrix
         
     def row_derivative(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
         drelative_strengths = -self.base_matrix * col_handicaps[None, :] / numpy.square(row_handicaps)[:, None]
         row_winner = relative_strengths > 1.0
-        dF = numpy.copy(drelative_strengths)
-        dF[row_winner] /= numpy.square(relative_strengths[row_winner])
-        return dF
+        d_payoff_matrix = numpy.copy(drelative_strengths)
+        d_payoff_matrix[row_winner] /= numpy.square(relative_strengths[row_winner])
+        return d_payoff_matrix
         
     def col_derivative(self, row_handicaps, col_handicaps):
         relative_strengths = self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
         drelative_strengths = self.base_matrix / row_handicaps[:, None]
         row_winner = relative_strengths > 1.0  
-        dF = numpy.copy(drelative_strengths)
-        dF[row_winner] /= numpy.square(relative_strengths[row_winner])
-        return dF
+        d_payoff_matrix = numpy.copy(drelative_strengths)
+        d_payoff_matrix[row_winner] /= numpy.square(relative_strengths[row_winner])
+        return d_payoff_matrix
         
-    def decanonicalize(self, handicaps_canonical, F_canonical):
+    def decanonicalize(self, handicaps_canonical, payoff_matrix_canonical):
         handicaps = numpy.power(handicaps_canonical, 1.0 / self.exponent)
-        return handicaps, F_canonical
+        return handicaps, payoff_matrix_canonical
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None, fix_index = True):
