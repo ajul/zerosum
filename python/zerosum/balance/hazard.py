@@ -10,7 +10,7 @@ class HazardBalance():
     However, the effect of the handicap (cost) is different:
     instead of each side being able to afford a quantity of units inversely proportional to cost,
     each side gets one unit, and payoff is cost of damage dealt minus cost of damage received.
-    The handicaps thus do not affect which side wins, or by how much, but rather the cost of doing so.
+    The h thus do not affect which side wins, or by how much, but rather the cost of doing so.
     
     The original example was symmetric, but it can work in the non-symmetric case as well.
     """
@@ -21,17 +21,17 @@ class HazardBalance():
         check_non_negative(self.base_matrix)
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
     
-    def handicap_function(self, row_handicaps, col_handicaps):
+    def handicap_function(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
         F = numpy.zeros_like(relative_strengths)
-        Fr = col_handicaps[None, :] - row_handicaps[:, None] / relative_strengths
-        Fc = col_handicaps[None, :] * relative_strengths - row_handicaps[:, None]
+        Fr = h_c[None, :] - h_r[:, None] / relative_strengths
+        Fc = h_c[None, :] * relative_strengths - h_r[:, None]
         F[row_winner] = Fr[row_winner]
         F[~row_winner] = Fc[~row_winner] 
         return F
         
-    def row_derivative(self, row_handicaps, col_handicaps):
+    def row_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
         dF = numpy.zeros_like(relative_strengths)
@@ -41,7 +41,7 @@ class HazardBalance():
         dF[~row_winner] = dFc[~row_winner]
         return dF
     
-    def col_derivative(self, row_handicaps, col_handicaps):
+    def col_derivative(self, h_r, h_c):
         relative_strengths = self.base_matrix
         row_winner = relative_strengths > 1.0
         dF = numpy.zeros_like(relative_strengths)

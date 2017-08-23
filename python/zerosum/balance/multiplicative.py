@@ -33,11 +33,11 @@ class MultiplicativeBalance(NonSymmetricBalance):
             
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
 
-    def handicap_function(self, row_handicaps, col_handicaps):
-        return self.base_matrix * col_handicaps[None, :] / row_handicaps[:, None]
+    def handicap_function(self, h_r, h_c):
+        return self.base_matrix * h_c[None, :] / h_r[:, None]
         
-    def row_derivative(self, row_handicaps, col_handicaps):
-        return -self.base_matrix * col_handicaps[None, :] / numpy.square(row_handicaps)[:, None]
+    def row_derivative(self, h_r, h_c):
+        return -self.base_matrix * h_c[None, :] / numpy.square(h_r)[:, None]
         
-    def col_derivative(self, row_handicaps, col_handicaps):
-        return self.base_matrix / row_handicaps[:, None]
+    def col_derivative(self, h_r, h_c):
+        return self.base_matrix / h_r[:, None]
