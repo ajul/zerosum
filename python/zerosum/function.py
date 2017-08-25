@@ -33,10 +33,10 @@ class ReciprocalLinearRectifier(ScalarFunction):
 
 class ExponentialRectifier(ScalarFunction):
     def evaluate(self, x):
-        raise NotImplementedError()
+        return numpy.exp(x)
     
     def derivative(self, x):
-        raise NotImplementedError()
+        return numpy.exp(x)
 
 class VectorFunction():
     """
