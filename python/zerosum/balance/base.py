@@ -156,7 +156,7 @@ class Balance():
                 self.check_col_derivative(h_r, h_c, epsilon = epsilon)
             if check_jacobian is not False:
                 epsilon = _epsilon if check_jacobian is True else check_jacobian
-                self.check_jacobian(h, epsilon = check_jacobian)
+                self.check_jacobian(h, epsilon = epsilon)
             
             return y
     
