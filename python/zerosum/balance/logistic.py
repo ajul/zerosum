@@ -54,7 +54,7 @@ class LogisticBalance():
         return h, payoff_matrix
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
-    def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None, fix_index = True):
+    def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None):
         """
         Args:
             base_matrix: The elements of base_matrix must be in (0, max_payoff), 
@@ -63,7 +63,6 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
                 In particular, all diagonal elements should be equal to the value of the game.
             row_weights, col_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
-            fix_index: Since this handicap function is invariant with respect to a global offset, we default to True.
         Raises:
             ValueError:
                 If any element of base_matrix is not in the open interval (0, max_payoff). 
@@ -79,14 +78,14 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         self.max_payoff = max_payoff
         normalized_value = value / max_payoff - 0.5
         
-        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value, fix_index = fix_index)
+        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value)
         LogisticBalance.__init__(self, base_matrix)
 
 class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
     """
     Symmetric verison.
     """
-    def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
+    def __init__(self, base_matrix, strategy_weights = None):
         """
         Args:
             base_matrix: The elements of base_matrix must be in (0, max_payoff), 
@@ -95,7 +94,6 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
                 In particular, all diagonal elements should be equal to the value of the game.
             strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
-            fix_index: Since this handicap function is invariant with respect to a global offset, we default to True.
         Raises:
             ValueError: 
                 If base_matrix is not square.
@@ -116,5 +114,5 @@ class LogisticSymmetricBalance(LogisticBalance, SymmetricBalance):
         # The maximum possible payoff (e.g. 100% win rate) is twice the value of the game.
         self.max_payoff = 2.0 * value
             
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        SymmetricBalance.__init__(self, strategy_weights)
         LogisticBalance.__init__(self, base_matrix)

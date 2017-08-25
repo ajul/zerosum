@@ -74,7 +74,7 @@ class LanchesterBalance():
         return handicaps, F
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
-    def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None, fix_index = True):
+    def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None):
         """
         Args:
             base_matrix: Should be strictly positive.
@@ -82,7 +82,6 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
             value: Desired value of the game. Should be in the interval (-1, 1).
             row_weights, col_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
-            fix_index: Since this handicap function is invariant with respect to a global scale, we default to True.
         """
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
@@ -90,11 +89,11 @@ class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
         if value <= -1.0 or value >= 1.0:
             raise ValueError("value %0.2f is not in the interval (-1, 1)" % value)
         
-        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
+        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value)
         LanchesterBalance.__init__(self, base_matrix, exponent)
 
 class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
-    def __init__(self, base_matrix, exponent = 1.0, strategy_weights = None, fix_index = True):
+    def __init__(self, base_matrix, exponent = 1.0, strategy_weights = None):
         """
         Args:
             base_matrix: Should be strictly positive.
@@ -104,12 +103,11 @@ class LanchesterSymmetricBalance(LanchesterBalance,SymmetricBalance):
                 raising the resulting handicap values to (1 / exponent).
             strategy_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
-            fix_index: Since this handicap function is invariant with respect to a global scale, we default to True.
         """
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         
         check_square(base_matrix)
         check_log_skew_symmetry(base_matrix)
 
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        SymmetricBalance.__init__(self, strategy_weights)
         LanchesterBalance.__init__(self, base_matrix, exponent)

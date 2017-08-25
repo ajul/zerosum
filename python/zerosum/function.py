@@ -5,6 +5,9 @@ _epsilon = numpy.sqrt(numpy.finfo(float).eps)
 class ScalarFunction():
     """
     Function from R -> R. Applied elementwise to vector inputs.
+    
+    In this context we use these as rectifiers to map 
+    from the range (-inf, inf) to (0, inf).
     """
     def evaluate(self, x):
         raise NotImplementedError()
@@ -41,6 +44,8 @@ class ExponentialRectifier(ScalarFunction):
 class VectorFunction():
     """
     Function from R^n -> R^m.
+    
+    In this context we use these to add additional simple terms to the objective function.
     """
     def evaluate(self, x):
         raise NotImplementedError()
@@ -58,26 +63,25 @@ class VectorFunction():
             n = self.evaluate(x - _epsilon * 0.5)
             result[:, j] = (p - n) / _epsilon
         return result
-
-class Sum(VectorFunction):
+        
+class SumRegularizer(VectorFunction):
     """ Sums the input vector multiplied with a given scalar or weight vector. """
-    def __init__(self, scale = 1.0):
-        self.scale = scale
+    def __init__(self, weights = 1.0):
+        self.weights = weights
 
     def evaluate(self, x):
-        return numpy.sum(self.scale * x, keepdims = True)
+        return numpy.sum(self.weights * x, keepdims = True)
         
     def jacobian(self, x):
-        return self.scale * numpy.ones((1, x.size))
+        return self.weights * numpy.ones((1, x.size))
         
-class Select(VectorFunction):
-    """ Selects a single element and subtracts offset from it. """
-    def __init__(self, index, offset = 0.0)
+class SelectRegularizer(VectorFunction):
+    """ Selects a single element. """
+    def __init__(self, index):
         self.index = index
-        self.offset = offset
         
     def evaluate(self, x):
-        return x[self.index] - offset
+        return x[self.index]
         
     def jacobian(self, x):
         result = numpy.zeros((1, x.size))

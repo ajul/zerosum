@@ -8,13 +8,11 @@ class MultiplicativeBalance(NonSymmetricBalance):
     
     rectifier = zerosum.function.ReciprocalLinearRectifier()
     
-    def __init__(self, base_matrix, row_weights = None, col_weights = None, 
-        value = 1.0, fix_index = True):
+    def __init__(self, base_matrix, row_weights = None, col_weights = None, value = 1.0):
         """
         Args:
             base_matrix: Should be nonnegative and preferably strictly positive.
             value: Should be strictly positive. Note that the default is 1.0.
-            fix_index: Since this handicap function is invariant with respect to a global scale, we default to True.
                 
         Raises:
             ValueWarning: If base_matrix has negative elements.
@@ -29,7 +27,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
             warnings.warn('Value %f is non-positive.' % value, ValueWarning)
     
         NonSymmetricBalance.__init__(self, row_weights = row_weights, col_weights = col_weights, 
-            value = value, fix_index = fix_index)
+            value = value)
             
         check_shape(self.base_matrix, self.row_weights, self.col_weights)
 

@@ -52,24 +52,22 @@ class HazardBalance():
         return dF
 
 class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
-    def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None, fix_index = None):
+    """
+    This case is unusual in that the solution may non-trivally change depending on the regularization.
+    """
+    def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None):
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
         
-        # We fix an index only if the desired value is zero.
-        # A global scale might be required to achieve other values.
-        if fix_index is None:
-            fix_index = (value == 0.0)
-        
-        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value, fix_index = fix_index)
+        NonSymmetricBalance.__init__(self, row_weights, col_weights, value = value)
         HazardBalance.__init__(self, base_matrix)
         
 class HazardSymmetricBalance(HazardBalance,SymmetricBalance):
-    def __init__(self, base_matrix, strategy_weights = None, fix_index = True):
+    def __init__(self, base_matrix, strategy_weights = None):
         if strategy_weights is None: strategy_weights = base_matrix.shape[0]
         
         check_square(base_matrix)
         check_log_skew_symmetry(base_matrix)
         
-        SymmetricBalance.__init__(self, strategy_weights, fix_index = fix_index)
+        SymmetricBalance.__init__(self, strategy_weights)
         HazardBalance.__init__(self, base_matrix)

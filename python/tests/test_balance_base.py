@@ -18,16 +18,8 @@ class TestWeights(unittest.TestCase):
             zerosum.balance.base._process_weights(weights)
 
 class TestNonSymmetricBalance(unittest.TestCase):
-    def test_fix_index_zero_weight_error(self):
-        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
-            strategy_weights = numpy.array([0.0, 1.0])
-            zerosum.balance.base.NonSymmetricBalance(row_weights = strategy_weights, col_weights = strategy_weights, fix_index = 0)
+    pass
 
 class TestSymmetricBalance(unittest.TestCase):
-
-    def test_fix_index_zero_weight_error(self):
-        with self.assertWarnsRegex(zerosum.balance.ValueWarning, 'zero weight'):
-            strategy_weights = numpy.array([0.0, 1.0])
-            zerosum.balance.base.SymmetricBalance(strategy_weights = strategy_weights, fix_index = 0)
-
+    pass
 # TODO: add input checking tests

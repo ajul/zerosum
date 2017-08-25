@@ -49,6 +49,30 @@ class Balance():
     Generally zerosum.function.ReciprocalLinearRectifier() is a good choice;
     while exponentials are mathematically elegant, they tend to suffer from accidental overflow.
     """
+    
+    regularizer_x = None
+    regularizer_x_weight = 1.0
+    
+    def set_default_regularizer(self):
+        """
+        Optional to override.
+        
+        Most handicap functions have some redundant dimension over which the payoffs are constant.
+        The regularizer intoduces additional term(s) to the optimization in order to choose a specific solution.
+        For most common handicap functions, including all one-parameter handicap functions,
+        the regularizer will be completely satisfied (essentially acting as a constraint)
+        and all the solutions have the same payoff matrix.
+        However, this is not necessarily the case for two-parameter handicap functions.
+        ("One-" and "two-parameter" are defined in the paper.)
+        
+        regularizer_x uses the raw optimization variables x.
+        We default regularizer_x to zerosum.function.SumRegularizer(weights = self.weights), 
+        which causes the minimizer to attempt to minimize the sum of the raw optimization variables x.
+        
+        regularizer_x_weight is what weight to assign the regularizer in the optimization.
+        """
+        self.regularizer_x = zerosum.function.SumRegularizer(self.weights)
+        self.regularizer_x_weight = 1.0
             
     def row_derivative(self, h_r, h_c):
         """
@@ -114,29 +138,16 @@ class Balance():
         """
         if x0 is None:
             x0 = numpy.zeros((self.handicap_count))
-        
-        # Keep the initial handicap of fix_index.
-        if self.fix_index is not False:
-            if x0.size == self.handicap_count:
-                fix_x = x0[self.fix_index]
-                x0 = numpy.delete(x0, self.fix_index)
-            else:
-                fix_x = 0.0
                 
         def x_to_h(self, x):
             """ 
             Converts the raw optimization variables x to the 
             canonical handicaps h.
             """
-            if self.fix_index is not False:
-                full_x = numpy.insert(x, self.fix_index, fix_x)
-            else:
-                full_x = x
-                
             if self.rectifier is None:
-                h = full_x
+                h = x
             else:
-                h = self.rectifier.evaluate(full_x)
+                h = self.rectifier.evaluate(x)
                 
             return h
         
@@ -146,8 +157,6 @@ class Balance():
             """
             h = x_to_h(self, x)
             y = self.objective(h)
-            if self.fix_index is not False:
-                y = numpy.delete(y, self.fix_index)
                 
             if check_derivative is not False:
                 h_r, h_c = self.split_handicaps(h)
@@ -157,6 +166,10 @@ class Balance():
             if check_jacobian is not False:
                 epsilon = _epsilon if check_jacobian is True else check_jacobian
                 self.check_jacobian(h, epsilon = epsilon)
+                
+            if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
+                r = self.regularizer_x.evaluate(x) * self.regularizer_x_weight
+                y = numpy.concatenate((y, r), axis = 0)
             
             return y
     
@@ -167,11 +180,11 @@ class Balance():
                 """
                 h = x_to_h(self, x)
                 J = self.jacobian(h)
-                if self.fix_index is not False:
-                    J = numpy.delete(J, self.fix_index, axis = 0)
-                    J = numpy.delete(J, self.fix_index, axis = 1)
                 if self.rectifier is not None:
                     J = J * self.rectifier.derivative(x)[None, :]
+                if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
+                    Jr = self.regularizer_x.jacobian(x) * self.regularizer_x_weight
+                    J = numpy.concatenate((J, Jr), axis = 0)
                 return J
         else:
             jac = None
@@ -276,7 +289,7 @@ class NonSymmetricBalance(Balance):
     This version of Balance for non-symmetric games, where each player is choosing
     from an independent set of strategies.
     """
-    def __init__(self, row_weights, col_weights, value = 0.0, fix_index = False):
+    def __init__(self, row_weights, col_weights, value = 0.0):
         """
         Args:
             row_weights, col_weights: Defines the desired Nash equilibrium 
@@ -285,10 +298,6 @@ class NonSymmetricBalance(Balance):
                 Weights will be normalized.
             value: The desired value of the resulting game. 
                 This is equal to the row player's payoff and the negative of the column player's payoff.
-            fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
-                This is useful if the handicap function is known to have a degree of invariance.
-                If set to True, a strategy with maximum weight will be selected.
-                The value None is reserved for subclasses to implement their own default fix_index.
         """
     
         self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
@@ -299,14 +308,8 @@ class NonSymmetricBalance(Balance):
         self.value = value
         
         self.weights = numpy.concatenate((self.row_weights, self.col_weights))
-        if fix_index is True:
-            # Select the first nonzero weight.
-            fix_index = numpy.argmax(self.weights)
-        elif fix_index is not False:
-            if self.weights[fix_index] == 0.0:
-                warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
-        self.fix_index = fix_index
+        self.set_default_regularizer()
         
     def split_handicaps(self, h):
         """ Splits handicaps (canonical or not) into row and col handicaps."""
@@ -362,7 +365,7 @@ class NonSymmetricBalance(Balance):
         return J
 
 class SymmetricBalance(Balance):
-    def __init__(self, strategy_weights, value = None, fix_index = False):
+    def __init__(self, strategy_weights, value = None):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
@@ -374,10 +377,6 @@ class SymmetricBalance(Balance):
             value: Value of the game. 
                 If not supplied it will be set automatically based on the diagonal elements
                 when the payoff matrix is first evaluated.
-            fix_index: If set to an integer, this will fix one handicap at its starting value and ignore the corresponding payoff.
-                This is useful if the handicap function is known to have a degree of invariance.
-                If set to True, a strategy with maximum weight will be selected.
-                The value None is reserved for subclasses to implement their own default fix_index.
         """
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
@@ -388,14 +387,7 @@ class SymmetricBalance(Balance):
             
         self.value = value
         
-        if fix_index is True:
-            # Select the maximum weight.
-            fix_index = numpy.argmax(self.strategy_weights)
-        elif fix_index is not False:
-            if self.strategy_weights[fix_index] == 0.0:
-                warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
-        
-        self.fix_index = fix_index
+        self.set_default_regularizer()
    
     def split_handicaps(self, h):
         """ Splits handicaps (canonical or not) into row and col handicaps."""
