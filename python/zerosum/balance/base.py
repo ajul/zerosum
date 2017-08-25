@@ -36,7 +36,23 @@ class Balance():
             In particular, all diagonal elements should be equal to the value of the game.
         """
         raise NotImplementedError("Balance subclasses must implement a handicap_function.")
-
+            
+    def row_derivative(self, h_r, h_c):
+        """
+        Optional to override. Defaults to a finite-difference implementation.
+        
+        Returns: the derivative of the payoff matrix with respect to the row h.
+        """
+        return self.row_derivative_fd(h_r, h_c)
+        
+    def col_derivative(self, h_r, h_c):
+        """
+        Optional to override.  Defaults to a finite-difference implementation.
+        
+        Returns: the derivative of the payoff matrix with respect to the column h.
+        """
+        return self.col_derivative_fd(h_r, h_c)
+        
     rectifier = None
     """
     Optional to override.
@@ -73,22 +89,6 @@ class Balance():
         """
         self.regularizer_x = zerosum.function.SumRegularizer(self.weights)
         self.regularizer_x_weight = 1.0
-            
-    def row_derivative(self, h_r, h_c):
-        """
-        Optional to override. Defaults to a finite-difference implementation.
-        
-        Returns: the derivative of the payoff matrix with respect to the row h.
-        """
-        return self.row_derivative_fd(h_r, h_c)
-        
-    def col_derivative(self, h_r, h_c):
-        """
-        Optional to override.  Defaults to a finite-difference implementation.
-        
-        Returns: the derivative of the payoff matrix with respect to the column h.
-        """
-        return self.col_derivative_fd(h_r, h_c)
     
     def decanonicalize(self, h, F):
         """
