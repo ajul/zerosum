@@ -58,17 +58,6 @@ class VectorFunction():
             n = self.evaluate(x - _epsilon * 0.5)
             result[:, j] = (p - n) / _epsilon
         return result
-        
-class Scale(VectorFunction):
-    """ Scales the input vector elementwise by a given scalar or vector. """
-    def __init__(self, scale = 1.0):
-        self.scale = scale
-
-    def evaluate(self, x):
-        return self.scale * x
-        
-    def jacobian(self, x):
-        return self.scale * numpy.eye(x.size)
 
 class Sum(VectorFunction):
     """ Sums the input vector multiplied with a given scalar or weight vector. """
@@ -80,3 +69,17 @@ class Sum(VectorFunction):
         
     def jacobian(self, x):
         return self.scale * numpy.ones((1, x.size))
+        
+class Select(VectorFunction):
+    """ Selects a single element and subtracts offset from it. """
+    def __init__(self, index, offset = 0.0)
+        self.index = index
+        self.offset = offset
+        
+    def evaluate(self, x):
+        return x[self.index] - offset
+        
+    def jacobian(self, x):
+        result = numpy.zeros((1, x.size))
+        result[self.index] = 1.0
+        return result
