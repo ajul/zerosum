@@ -289,8 +289,6 @@ class NonSymmetricBalance(Balance):
                 This is useful if the handicap function is known to have a degree of invariance.
                 If set to True, a strategy with maximum weight will be selected.
                 The value None is reserved for subclasses to implement their own default fix_index.
-        Raises:
-            ValueError if only one of row_derivative and col_derivative is provided.
         """
     
         self.row_count, self.row_weights, self.row_objective_weights = _process_weights(row_weights)
@@ -364,7 +362,7 @@ class NonSymmetricBalance(Balance):
         return J
 
 class SymmetricBalance(Balance):
-    def __init__(self, strategy_weights, row_derivative = None, value = None, fix_index = False):
+    def __init__(self, strategy_weights, value = None, fix_index = False):
         """
         This version of Balance for symmetric games, 
         where both players are choosing from the same set of strategies.
