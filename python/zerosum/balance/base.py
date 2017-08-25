@@ -298,12 +298,12 @@ class NonSymmetricBalance(Balance):
         
         self.value = value
         
-        weights = numpy.concatenate((self.row_weights, self.col_weights))
+        self.weights = numpy.concatenate((self.row_weights, self.col_weights))
         if fix_index is True:
             # Select the first nonzero weight.
-            fix_index = numpy.argmax(weights)
+            fix_index = numpy.argmax(self.weights)
         elif fix_index is not False:
-            if weights[fix_index] == 0.0:
+            if self.weights[fix_index] == 0.0:
                 warnings.warn('fix_index %d corresponds to a strategy with zero weight.' % fix_index, ValueWarning)
         
         self.fix_index = fix_index
@@ -382,6 +382,7 @@ class SymmetricBalance(Balance):
         self.handicap_count, self.strategy_weights, self.strategy_objective_weights = _process_weights(strategy_weights)
         self.row_count = self.handicap_count
         self.col_count = self.handicap_count
+        self.weights = self.strategy_weights
         self.row_weights = self.strategy_weights
         self.col_weights = self.strategy_weights
             
