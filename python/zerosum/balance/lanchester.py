@@ -69,7 +69,7 @@ class LanchesterBalance():
         
         return dF
         
-    def decanonicalize_h(self, h):
+    def decanonicalize_handicaps(self, h):
         handicaps = numpy.power(h, 1.0 / self.exponent)
         return handicaps
         

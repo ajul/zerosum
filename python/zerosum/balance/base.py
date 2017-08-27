@@ -90,7 +90,7 @@ class Balance():
         self.regularizer_x = zerosum.function.SumRegularizer(self.weights)
         self.regularizer_x_weight = 1.0
     
-    def decanonicalize_h(self, h):
+    def decanonicalize_handicaps(self, h):
         """
         In some cases the problem may be transformed into some canonical form before solving it.
         Subclasses override this method to transform the handicap back into a form corresponding to the problem statement.
@@ -98,13 +98,15 @@ class Balance():
         handicaps = h
         return handicaps
         
-    def decanonicalize_F(self, F):
+    def decanonicalize_payoffs(self, p):
         """
         In some cases the problem may be transformed into some canonical form before solving it.
-        Subclasses override this method to transform the payoff matrix back into a form corresponding to the problem statement.
+        Subclasses override this method to transform payoffs back into a form corresponding to the problem statement.
+        
+        This should be a linear function, since expected payoffs are a linear combination of individual payoffs.
         """
-        payoff_matrix = F
-        return payoff_matrix
+        payoffs = p
+        return payoffs
     
     """
     Common methods.
@@ -170,7 +172,7 @@ class Balance():
                 self.check_col_derivative(h_r, h_c, epsilon = check_derivative)
             if check_jacobian:
                 self.check_jacobian(h, epsilon = check_jacobian)
-                
+            
             if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
                 r = self.regularizer_x.evaluate(x) * self.regularizer_x_weight
                 y = numpy.concatenate((y, r), axis = 0)
@@ -200,8 +202,8 @@ class Balance():
         result.F = self.handicap_function(result.h_r, result.h_c)
         
         # Decanonicalize the canonical handicaps into the final values.
-        result.handicaps = self.decanonicalize_h(result.h)
-        result.payoff_matrix = self.decanonicalize_F(result.F)
+        result.handicaps = self.decanonicalize_handicaps(result.h)
+        result.payoff_matrix = self.decanonicalize_payoffs(result.F)
         result.row_handicaps, result.col_handicaps = self.split_handicaps(result.h)
         
         return result
