@@ -47,11 +47,10 @@ class LogisticBalance():
         payoffs = self.handicap_function(h_r, h_c)
         return 0.25 - payoffs * payoffs
         
-    def decanonicalize(self, h, F):
+    def decanonicalize_F(self, F):
         """ Expands the payoff matrix back to the original range (0, max_payoff). """
         payoff_matrix = (F + 0.5) * self.max_payoff
-        
-        return h, payoff_matrix
+        return payoff_matrix
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
     def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None):

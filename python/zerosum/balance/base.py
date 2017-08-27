@@ -74,7 +74,7 @@ class Balance():
         Optional to override.
         
         Most handicap functions have some redundant dimension over which the payoffs are constant.
-        The regularizer intoduces additional term(s) to the optimization in order to choose a specific solution.
+        The regularizer introduces additional term(s) to the optimization in order to choose a specific solution.
         For most common handicap functions, including all one-parameter handicap functions,
         the regularizer will be completely satisfied (essentially acting as a constraint)
         and all the solutions have the same payoff matrix.
@@ -90,20 +90,21 @@ class Balance():
         self.regularizer_x = zerosum.function.SumRegularizer(self.weights)
         self.regularizer_x_weight = 1.0
     
-    def decanonicalize(self, h, F):
+    def decanonicalize_h(self, h):
         """
         In some cases the problem may be transformed into some canonical form before solving it.
-        Subclasses implement this method to transform the result back into a form corresponding to the problem statement.
-        This may modify result.F and/or result.handicap.
-        
-        Args:
-            h: the canonical handicaps.
-            F: the canonical payoff matrix.
-        Returns:
-            handicaps
-            F
+        Subclasses override this method to transform the handicap back into a form corresponding to the problem statement.
         """
-        return h, F
+        handicaps = h
+        return handicaps
+        
+    def decanonicalize_F(self, F):
+        """
+        In some cases the problem may be transformed into some canonical form before solving it.
+        Subclasses override this method to transform the payoff matrix back into a form corresponding to the problem statement.
+        """
+        payoff_matrix = F
+        return payoff_matrix
     
     """
     Common methods.
@@ -196,7 +197,8 @@ class Balance():
         result.F = self.handicap_function(result.h_r, result.h_c)
         
         # Decanonicalize the canonical handicaps into the final values.
-        result.handicaps, result.payoff_matrix = self.decanonicalize(result.h, result.F)
+        result.handicaps = self.decanonicalize_h(result.h)
+        result.payoff_matrix = self.decanonicalize_F(result.F)
         result.row_handicaps, result.col_handicaps = self.split_handicaps(result.h)
         
         return result

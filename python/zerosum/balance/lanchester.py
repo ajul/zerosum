@@ -69,9 +69,9 @@ class LanchesterBalance():
         
         return dF
         
-    def decanonicalize(self, h, F):
+    def decanonicalize_h(self, h):
         handicaps = numpy.power(h, 1.0 / self.exponent)
-        return handicaps, F
+        return handicaps
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
     def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None):
