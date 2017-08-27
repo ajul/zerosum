@@ -139,6 +139,11 @@ class Balance():
         """
         if x0 is None:
             x0 = numpy.zeros((self.handicap_count))
+            
+        if check_derivative is True:
+            check_derivative = _epsilon
+        if check_jacobian is True:
+            check_jacobian = _epsilon
                 
         def x_to_h(self, x):
             """ 
@@ -159,14 +164,12 @@ class Balance():
             h = x_to_h(self, x)
             y = self.objective(h)
                 
-            if check_derivative is not False:
+            if check_derivative:
                 h_r, h_c = self.split_handicaps(h)
-                epsilon = _epsilon if check_derivative is True else check_derivative
-                self.check_row_derivative(h_r, h_c, epsilon = epsilon)
-                self.check_col_derivative(h_r, h_c, epsilon = epsilon)
-            if check_jacobian is not False:
-                epsilon = _epsilon if check_jacobian is True else check_jacobian
-                self.check_jacobian(h, epsilon = epsilon)
+                self.check_row_derivative(h_r, h_c, epsilon = check_derivative)
+                self.check_col_derivative(h_r, h_c, epsilon = check_derivative)
+            if check_jacobian:
+                self.check_jacobian(h, epsilon = check_jacobian)
                 
             if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
                 r = self.regularizer_x.evaluate(x) * self.regularizer_x_weight
@@ -207,7 +210,7 @@ class Balance():
     Methods for checking derivatives and Jacobians.
     """
     
-    def jacobian_fd(self, h, epsilon = _epsilon):
+    def jacobian_fd(self, h, epsilon):
         """ Computes a finite (central) difference approximation of the Jacobian. """
         J = numpy.zeros((self.handicap_count, self.handicap_count))
         
@@ -222,18 +225,17 @@ class Balance():
         
         return J
 
-    def check_jacobian(self, h = None, epsilon = _epsilon):
+    def check_jacobian(self, h, epsilon):
         """ 
         Checks the Jacobian computed from the handicap function derivatives 
         against a finite difference approximation. 
         """
-        if h is None: h = numpy.zeros(self.handicap_count)
-        result = self.jacobian(h) - self.jacobian_fd(h)
+        result = self.jacobian(h) - self.jacobian_fd(h, epsilon)
         print('Maximum difference between evaluated Jacobian and finite difference:', 
             numpy.max(numpy.abs(result)))
         return result
         
-    def row_derivative_fd(self, h_r, h_c, epsilon = _epsilon):
+    def row_derivative_fd(self, h_r, h_c, epsilon):
         """ 
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding row handicap. 
@@ -243,7 +245,7 @@ class Balance():
         h_r_P = h_r + epsilon * 0.5
         return (self.handicap_function(h_r_P, h_c) - self.handicap_function(h_r_N, h_c)) / epsilon
         
-    def col_derivative_fd(self, h_r, h_c, epsilon = _epsilon):
+    def col_derivative_fd(self, h_r, h_c, epsilon):
         """ 
         Computes a finite (central) difference approximation of derivative of the handicap function 
         with respect to the corresponding column handicap. 
@@ -252,7 +254,7 @@ class Balance():
         h_c_P = h_c + epsilon * 0.5
         return (self.handicap_function(h_r, h_c_P) - self.handicap_function(h_r, h_c_N)) / epsilon
         
-    def check_row_derivative(self, h_r, h_c, epsilon = _epsilon):
+    def check_row_derivative(self, h_r, h_c, epsilon):
         """ 
         Checks the derivative of the handicap function with respect to the corresponding row handicap 
         against a finite difference approximation.
@@ -269,7 +271,7 @@ class Balance():
             numpy.max(numpy.abs(result)))
         return result
     
-    def check_col_derivative(self, h_r, h_c, epsilon = _epsilon):
+    def check_col_derivative(self, h_r, h_c, epsilon):
         """
         Checks the derivative of the handicap function with respect to the corresponding column handicap 
         against a finite difference approximation.
