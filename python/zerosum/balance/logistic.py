@@ -53,15 +53,14 @@ class LogisticBalance():
         return payoff_matrix
         
 class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
-    def __init__(self, base_matrix, value, max_payoff, row_weights = None, col_weights = None):
+    def __init__(self, base_matrix, max_payoff, row_weights = None, col_weights = None, value = None):
         """
         Args:
-            base_matrix: The elements of base_matrix must be in (0, max_payoff), 
-                where max_payoff is twice the value of the game.
-                The base_matrix should be skew-symmetric plus a constant offset (namely the value of the game).
-                In particular, all diagonal elements should be equal to the value of the game.
+            base_matrix: The elements of base_matrix must be in (0, max_payoff).
+            max_payoff: Maximum payoff of the game. All b
             row_weights, col_weights: Defines the desired Nash equilibrium in terms of strategy probability weights. 
                 If only an integer is specified, a uniform distribution will be used.
+            value: Desired value of the game. Defaults to 0.5 * max_payoff.
         Raises:
             ValueError:
                 If any element of base_matrix is not in the open interval (0, max_payoff). 
@@ -75,6 +74,14 @@ class LogisticNonSymmetricBalance(LogisticBalance, NonSymmetricBalance):
         if col_weights is None: col_weights = base_matrix.shape[1]
         
         self.max_payoff = max_payoff
+        if value is None: value = 0.5 * max_payoff
+        
+        if value <= 0.0 or value >= max_payoff:
+            raise ValueError("value is not in the range (0, max_payoff).")
+        
+        if numpy.any(base_matrix <= 0.0) or numpy.any(base_matrix >= max_payoff):
+            raise ValueError("base_matrix contains element(s) not in the range (0, max_payoff).")
+        
         normalized_value = value / max_payoff - 0.5
         
         NonSymmetricBalance.__init__(self, row_weights, col_weights, value = normalized_value)
