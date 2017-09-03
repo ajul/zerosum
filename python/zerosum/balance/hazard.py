@@ -55,7 +55,7 @@ class HazardNonSymmetricBalance(HazardBalance,NonSymmetricBalance):
     """
     This case is unusual in that the solution may non-trivally change depending on the regularization.
     """
-    def __init__(self, base_matrix, value = 0.0, row_weights = None, col_weights = None):
+    def __init__(self, base_matrix, row_weights = None, col_weights = None, value = 0.0):
         if row_weights is None: row_weights = base_matrix.shape[0]
         if col_weights is None: col_weights = base_matrix.shape[1]
         
