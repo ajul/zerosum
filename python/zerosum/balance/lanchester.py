@@ -74,7 +74,7 @@ class LanchesterBalance():
         return handicaps
         
 class LanchesterNonSymmetricBalance(LanchesterBalance,NonSymmetricBalance):
-    def __init__(self, base_matrix, exponent = 1.0, value = 0.0, row_weights = None, col_weights = None):
+    def __init__(self, base_matrix, exponent = 1.0, row_weights = None, col_weights = None, value = 0.0):
         """
         Args:
             base_matrix: Should be strictly positive.
