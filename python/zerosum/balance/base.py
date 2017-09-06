@@ -3,6 +3,9 @@ import numpy
 import scipy.optimize
 import warnings
 
+# Python 2 compatibility.
+from __future__ import print_function
+
 # Same as scipy.optimize.
 _epsilon = numpy.sqrt(numpy.finfo(float).eps)
     
