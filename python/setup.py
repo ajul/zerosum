@@ -1,8 +1,11 @@
 import setuptools
 import codecs
+import os
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the README file
-with codecs.open('README.md', encoding='utf-8') as f:
+with codecs.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
