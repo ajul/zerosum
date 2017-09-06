@@ -1,3 +1,4 @@
 *.pyc
-/python/zerosum.egg-info
+/python/build
 /python/dist
+/python/*.egg-info
