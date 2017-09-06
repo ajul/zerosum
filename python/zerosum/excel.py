@@ -12,7 +12,7 @@ import zerosum.nash
 @xlwings.func
 @xlwings.arg('payoff_matrix', numpy.array, ndim=2)
 @xlwings.ret(expand='table')
-def nash(payoff_matrix):
+def zerosum_nash(payoff_matrix):
     """
     Computes Nash equilbrium strategy weights and value.
     Result format:
@@ -49,10 +49,10 @@ def nash(payoff_matrix):
 def compute_balance_result(balance_class, *args, **kwargs):
     """
     Common result format:
-           | m cols          1 col
+            | 1 col           m cols
     --------------------------------------
-    n rows | payoff_matrix   row_handicaps
-    1 row  | col_handicaps   blank
+    1 row   | blank          col_handicaps
+    n rows  | row_handicaps  payoff_matrix 
     """
     balance = balance_class(*args, **kwargs)
     result = balance.optimize()
@@ -60,10 +60,11 @@ def compute_balance_result(balance_class, *args, **kwargs):
     col_handicaps = numpy.reshape(result.col_handicaps, (1, -1))
     row_handicaps = numpy.reshape(result.row_handicaps, (-1, 1))
     result = numpy.block(
-        [[result.payoff_matrix, row_handicaps],
-         [col_handicaps, 0.0]])
+        [[0.0, col_handicaps],
+         [row_handicaps, result.payoff_matrix]])
     result = result.tolist()
-    result[-1][-1] = None
+    # Blank the upper-left corner.
+    result[0][0] = None
     return result
     
 @xlwings.func
