@@ -33,4 +33,23 @@ ax2.set_title('Defender')
 plt.suptitle('Pokémon Nash equilibrium')
 fig.subplots_adjust(wspace=0.5)
 plt.savefig("out/pokemon_nash_pie.png", dpi = dpi, bbox_inches = "tight")
-plt.show()
+#plt.show()
+
+# uniform plot
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize = figsize, dpi = dpi)
+
+labels = type_chart.row_names
+ax1.pie(numpy.ones_like(row_nash.strategy), labels = labels, colors = colors)
+ax1.axis('equal')
+ax1.set_title('Attacker')
+
+labels = type_chart.col_names
+ax2.pie(numpy.ones_like(col_nash.strategy), labels = labels, colors = colors)
+ax2.axis('equal')
+ax2.set_title('Defender')
+
+plt.suptitle('Pokémon uniform Nash equilibrium')
+fig.subplots_adjust(wspace=0.5)
+plt.savefig("out/pokemon_nash_pie_uniform.png", dpi = dpi, bbox_inches = "tight")
+#plt.show()
