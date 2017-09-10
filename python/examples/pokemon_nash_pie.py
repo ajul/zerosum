@@ -30,6 +30,7 @@ ax2.pie(col_nash.strategy, labels = labels, colors = colors)
 ax2.axis('equal')
 ax2.set_title('Defender')
 
+plt.suptitle('Pokémon Nash equilibrium')
 fig.subplots_adjust(wspace=0.5)
 plt.savefig("out/pokemon_nash_pie.png", dpi = dpi, bbox_inches = "tight")
 plt.show()
