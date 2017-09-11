@@ -6,7 +6,7 @@ class MultiplicativeBalance(NonSymmetricBalance):
     Handicap function defined by col_handicap / row_handicap * initial_payoff.
     """
     
-    rectifier = zerosum.function.ReciprocalLinearRectifier()
+    rectify_mask = True
     
     def __init__(self, base_matrix, row_weights = None, col_weights = None, value = 1.0):
         """

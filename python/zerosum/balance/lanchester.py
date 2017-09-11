@@ -15,7 +15,7 @@ class LanchesterBalance():
     Note that for exponents above 1.0 this handicap function has a sharp kink
     whenever both sides are nearly evenly matched.
     """
-    rectifier = zerosum.function.ReciprocalLinearRectifier()
+    rectify_mask = True
     
     def __init__(self, base_matrix, exponent):
         self.base_matrix = base_matrix

@@ -57,18 +57,18 @@ class Balance():
         Returns: the derivative of the payoff matrix with respect to the column h.
         """
         return self.col_derivative_fd(h_r, h_c)
-        
-    rectifier = None
+    
+    rectify_mask = False
     """
-    Optional to override.
+    Optional to override. Set to False for no rectification, True to rectify all variables, or use a mask to rectify only some.
     
     By default the canonical handicaps have the range (-inf, inf). 
     However, depending on the handicap function, it may only make sense to have
     strictly positive canonical handicaps in the range (0, inf). 
     To do this we can use a strictly monotonically increasing rectifier function
     to map from the raw optimization values x to the canonical handicaps.
-    Generally zerosum.function.ReciprocalLinearRectifier() is a good choice;
-    while exponentials are mathematically elegant, they tend to suffer from accidental overflow.
+    
+    The default is the piecewise combination of a reciprocal and a linear.
     """
     
     regularizer_x = None
@@ -151,24 +151,12 @@ class Balance():
             check_derivative = _epsilon
         if check_jacobian is True:
             check_jacobian = _epsilon
-                
-        def x_to_h(self, x):
-            """ 
-            Converts the raw optimization variables x to the 
-            canonical handicaps h.
-            """
-            if self.rectifier is None:
-                h = x
-            else:
-                h = self.rectifier.evaluate(x)
-                
-            return h
         
         def fun(x):
             """
             The objective function in terms of the raw optimization variables.
             """
-            h = x_to_h(self, x)
+            h = self.rectify_masked(x)
             y = self.objective(h)
                 
             if check_derivative:
@@ -189,10 +177,9 @@ class Balance():
                 """
                 Jacobian of the objective function.
                 """
-                h = x_to_h(self, x)
+                h = self.rectify_masked(x)
                 J = self.jacobian(h)
-                if self.rectifier is not None:
-                    J = J * self.rectifier.derivative(x)[None, :]
+                J = J * self.rectify_masked_derivative(x)[None, :]
                 if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
                     Jr = self.regularizer_x.jacobian(x) * self.regularizer_x_weight
                     J = numpy.concatenate((J, Jr), axis = 0)
@@ -202,7 +189,7 @@ class Balance():
         
         result = scipy.optimize.root(fun = fun, x0 = x0, jac = jac, method = method, *args, **kwargs)
         
-        result.h = x_to_h(self, result.x)
+        result.h = self.rectify_masked(result.x)
         result.h_r, result.h_c = self.split_handicaps(result.h)
         result.F = self.handicap_function(result.h_r, result.h_c)
         
@@ -294,6 +281,48 @@ class Balance():
         print('Maximum difference between evaluated col_derivative and finite difference:', 
             numpy.max(numpy.abs(result)))
         return result
+    
+    """
+    Rectification details.
+    """
+    
+    def rectify_masked(self, x):
+        """
+        Rectifies only the variables x that are flagged in self.rectify_mask.
+        """
+        if self.rectify_mask is False: return x.copy()
+        elif self.rectify_mask is True: return self.rectify(x)
+        else:
+            result = x.copy()
+            result[self.rectify_mask] = self.rectify(x)
+            return result
+        
+    def rectify_masked_derivative(self, x):
+        """
+        Derivative of rectify_masked().
+        """
+        if self.rectify_mask is False: return numpy.ones_like(x)
+        elif self.rectify_mask is True: return self.rectify_derivative(x)
+        else:
+            result = numpy.ones_like(x)
+            result[self.rectify_mask] = self.rectify_derivative(x)
+            return result
+        
+    def rectify(self, x):
+        mask = x >= 0.0
+        result = numpy.zeros_like(x)
+        result[mask] = x[mask] + 1.0
+        result[~mask] = 1.0 / (1.0 - x[~mask])
+        return result
+    
+    def rectify_derivative(self, x):
+        mask = x >= 0.0
+        result = numpy.ones_like(x)
+        result[~mask] = 1.0 / (1.0 - x[~mask]) / (1.0 - x[~mask])
+        return result
+        
+    def rectify_derivative_fd(self, x, epsilon):
+        return (self.rectify(x + epsilon * 0.5) - self.rectify(x - epsilon * 0.5)) / epsilon
 
 class NonSymmetricBalance(Balance):
     """

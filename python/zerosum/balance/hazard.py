@@ -14,7 +14,7 @@ class HazardBalance():
     
     The original example was symmetric, but it can work in the non-symmetric case as well.
     """
-    rectifier = zerosum.function.ReciprocalLinearRectifier()
+    rectify_mask = True
     
     def __init__(self, base_matrix):
         self.base_matrix = base_matrix
