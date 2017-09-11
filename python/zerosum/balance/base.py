@@ -45,7 +45,7 @@ class Balance():
         
         Returns: the derivative of the payoff matrix with respect to the row h.
         """
-        return self.row_derivative_fd(h_r, h_c)
+        return self.row_derivative_fd(h_r, h_c, _epsilon)
         
     def col_derivative(self, h_r, h_c):
         """
@@ -53,7 +53,7 @@ class Balance():
         
         Returns: the derivative of the payoff matrix with respect to the column h.
         """
-        return self.col_derivative_fd(h_r, h_c)
+        return self.col_derivative_fd(h_r, h_c, _epsilon)
     
     rectify_mask = False
     """
