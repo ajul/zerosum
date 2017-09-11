@@ -1,12 +1,9 @@
 # Python 2 compatibility.
 from __future__ import print_function
 
-import zerosum.function
 import numpy
 import scipy.optimize
 import warnings
-
-
 
 # Same as scipy.optimize.
 _epsilon = numpy.sqrt(numpy.finfo(float).eps)
@@ -71,29 +68,36 @@ class Balance():
     The default is the piecewise combination of a reciprocal and a linear.
     """
     
-    regularizer_x = None
-    regularizer_x_weight = 1.0
+    """
+    Most handicap functions have some redundant dimension over which the payoffs are constant.
+    The regularizer introduces additional term(s) to the optimization in order to choose a specific solution.
+    For most common handicap functions, including all one-parameter handicap functions,
+    all the solutions have the same payoff matrix, so the regularizer effectively just selects one of them.
+    However, this is not necessarily the case for two-parameter handicap functions.
+    ("One-" and "two-parameter" are defined in the paper.)
+    """
     
-    def set_default_regularizer(self):
+    regularizer_x_weight = 1.0
+    """
+    The weight to assign to the regularizer on the optimization variables x. Set to 0.0 to disable.
+    """
+    
+    def regularizer_x(self, x):
         """
         Optional to override.
         
-        Most handicap functions have some redundant dimension over which the payoffs are constant.
-        The regularizer introduces additional term(s) to the optimization in order to choose a specific solution.
-        For most common handicap functions, including all one-parameter handicap functions,
-        the regularizer will be completely satisfied (essentially acting as a constraint)
-        and all the solutions have the same payoff matrix.
-        However, this is not necessarily the case for two-parameter handicap functions.
-        ("One-" and "two-parameter" are defined in the paper.)
-        
         regularizer_x uses the raw optimization variables x.
-        We default regularizer_x to zerosum.function.SumRegularizer(weights = self.weights), 
-        which causes the minimizer to attempt to minimize the sum of the raw optimization variables x.
+        We default regularizer_x to summing x.
         
-        regularizer_x_weight is what weight to assign the regularizer in the optimization.
+        Should return a 1-D array.
         """
-        self.regularizer_x = zerosum.function.SumRegularizer(self.weights)
-        self.regularizer_x_weight = 1.0
+        return numpy.sum(x, keepdims = True)
+    
+    def regularizer_x_jacobian(self, x):
+        """
+        Jacobian of regularizer_x().
+        """
+        return numpy.ones((1, x.size))
     
     def decanonicalize_handicaps(self, h):
         """
@@ -166,8 +170,8 @@ class Balance():
             if check_jacobian:
                 self.check_jacobian(h, epsilon = check_jacobian)
             
-            if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
-                r = self.regularizer_x.evaluate(x) * self.regularizer_x_weight
+            if self.regularizer_x_weight > 0.0:
+                r = self.regularizer_x(x) * self.regularizer_x_weight
                 y = numpy.concatenate((y, r), axis = 0)
             
             return y
@@ -180,8 +184,8 @@ class Balance():
                 h = self.rectify_masked(x)
                 J = self.jacobian(h)
                 J = J * self.rectify_masked_derivative(x)[None, :]
-                if self.regularizer_x is not None and self.regularizer_x_weight > 0.0:
-                    Jr = self.regularizer_x.jacobian(x) * self.regularizer_x_weight
+                if self.regularizer_x_weight > 0.0:
+                    Jr = self.regularizer_x_jacobian(x) * self.regularizer_x_weight
                     J = numpy.concatenate((J, Jr), axis = 0)
                 return J
         else:
@@ -349,8 +353,6 @@ class NonSymmetricBalance(Balance):
         
         self.weights = numpy.concatenate((self.row_weights, self.col_weights))
         
-        self.set_default_regularizer()
-        
     def split_handicaps(self, h):
         """ Splits handicaps (canonical or not) into row and col handicaps."""
         return h[:self.row_count], h[-self.col_count:]
@@ -426,8 +428,6 @@ class SymmetricBalance(Balance):
         self.col_weights = self.strategy_weights
             
         self.value = value
-        
-        self.set_default_regularizer()
    
     def split_handicaps(self, h):
         """ Splits handicaps (canonical or not) into row and col handicaps."""
