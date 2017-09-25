@@ -43,6 +43,6 @@ setuptools.setup(
 
     install_requires = ['numpy', 'scipy'],
     extras_require = {
-        'excel': ['xlwings'],
+        'excel': ['xlwings', 'pypiwin32'],
     },
 )
