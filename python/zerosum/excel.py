@@ -102,7 +102,7 @@ def lanchester_symmetric_balance(base_matrix, exponent = 1.0, strategy_weights =
 @xlwings.arg('row_weights', numpy.array, ndim=1)
 @xlwings.arg('col_weights', numpy.array, ndim=1)
 @xlwings.ret(expand='table')
-def logistic_non_symmetric_balance(base_matrix, max_payoff, row_weights = None, col_weights = None, value = 0.0):
+def logistic_non_symmetric_balance(base_matrix, max_payoff, row_weights = None, col_weights = None, value = None):
     return compute_balance_result(zerosum.balance.LogisticNonSymmetricBalance, base_matrix, max_payoff, row_weights, col_weights, value)
 
 @xlwings.func
