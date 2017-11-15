@@ -39,6 +39,7 @@ class TestTiming(tests.common.TestBalanceBase):
         print()
         for timing_size in self.timing_sizes:
             total_time = 0.0
+            total_fev = 0
             for i in range(self.num_timing_trials):
                 kwargs, value = self.generate_random_args(timing_size, timing_size)
                 row_weights = tests.common.random_weights(timing_size)
@@ -49,7 +50,9 @@ class TestTiming(tests.common.TestBalanceBase):
                 end_time = time.process_time()
                 
                 total_time += (end_time - start_time)
+                total_fev += result.nfev
             
             mean_time = total_time / self.num_timing_trials
-            print('%dx%d mean time (%d trials): %f s' % (timing_size, timing_size, self.num_timing_trials, mean_time))
+            mean_fev = total_fev / self.num_timing_trials
+            print('%dx%d (%d trials): %f s mean time, %f mean fev' % (timing_size, timing_size, self.num_timing_trials, mean_time, mean_fev))
             
