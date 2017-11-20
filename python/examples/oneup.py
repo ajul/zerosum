@@ -4,6 +4,8 @@ import zerosum.nash
 import matplotlib
 import matplotlib.pyplot as plt
 
+matplotlib.rc('text', usetex = True)
+
 def minimizer_advantage(a, b):
     b_power_a = numpy.power(b, a) # max_handicap
     denom = b - b_power_a + a * b_power_a * numpy.log(b)
@@ -17,6 +19,37 @@ def maximizer_advantage(a, b):
     p = (b - b_power_a) / denom
     v = b * (b - 1.0) / denom 
     return p, v
+
+n = 1024
+b = 9.0 # maximum payoff; by what factor is the top of the step higher than the bottom
+
+dpi = 120
+
+a = numpy.linspace(0.0, 1.0, n)
+min_p, min_v = minimizer_advantage(a, b)
+max_p, max_v = maximizer_advantage(a, b)
+
+fig_p, ax_p = plt.subplots(1, 1, figsize = (9, 9), dpi=dpi)
+ax_p.plot(a, min_p, color='blue')
+ax_p.plot(a, max_p, color='red')
+ax_p.legend(['Minimizer advantage', 'Maximizer advantage'])
+ax_p.set_xlabel('Maximum strategy ($a$)')
+ax_p.set_ylabel('Probability of playing extremal strategy')
+ax_p.set_aspect('equal')
+ax_p.set_xlim(left = 0.0, right = 1.0)
+ax_p.set_ylim(bottom = 0.0, top = 1.0)
+fig_p.savefig("out/oneup_probability.png", dpi = dpi, bbox_inches = "tight")
+
+fig_v, ax_v = plt.subplots(1, 1, figsize = (9, 9), dpi=dpi)
+ax_v.plot(a, min_v, color='blue')
+ax_v.plot(a, max_v, color='red')
+ax_v.legend(['Minimizer advantage', 'Maximizer advantage'])
+ax_v.set_xlabel('Maximum strategy ($a$)')
+ax_v.set_ylabel('Expected payoff')
+#ax_v.set_aspect(1.0 / (b + 1.0))
+ax_v.set_xlim(left = 0.0, right = 1.0)
+ax_v.set_ylim(bottom = 0.0, top = b)
+fig_v.savefig("out/oneup_payoff.png", dpi = dpi, bbox_inches = "tight")
 
 # verification code
 """
